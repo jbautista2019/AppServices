@@ -15,11 +15,21 @@ create table if not exists public.services (
 
 alter table public.services enable row level security;
 
+drop policy if exists "Published services are public" on public.services;
 create policy "Published services are public"
   on public.services for select
   using (is_active = true);
 
+drop policy if exists "Providers manage their own services" on public.services;
 create policy "Providers manage their own services"
   on public.services for all
   using (auth.uid() = provider_id)
   with check (auth.uid() = provider_id);
+
+create index if not exists services_active_created_at_idx
+  on public.services (created_at desc)
+  where is_active = true;
+
+grant select on public.services to anon, authenticated;
+grant insert, update, delete on public.services to authenticated;
+grant usage, select on sequence public.services_id_seq to authenticated;
