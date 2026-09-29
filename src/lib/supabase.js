@@ -17,3 +17,36 @@ export async function getPublishedServices() {
 
   return { data, error }
 }
+
+export async function getCategories() {
+  if (!supabase) return { data: null, error: new Error('Supabase no está configurado.') }
+
+  return supabase
+    .from('categories')
+    .select('name')
+    .order('name', { ascending: true })
+}
+
+export async function isCategoryAdmin() {
+  if (!supabase) return { data: false, error: new Error('Supabase no está configurado.') }
+
+  return supabase.rpc('is_category_admin')
+}
+
+export async function createCategory(name) {
+  if (!supabase) return { error: new Error('Supabase no está configurado.') }
+
+  return supabase.from('categories').insert({ name })
+}
+
+export async function updateCategory(currentName, name) {
+  if (!supabase) return { error: new Error('Supabase no está configurado.') }
+
+  return supabase.from('categories').update({ name }).eq('name', currentName)
+}
+
+export async function deleteCategory(name) {
+  if (!supabase) return { error: new Error('Supabase no está configurado.') }
+
+  return supabase.from('categories').delete().eq('name', name)
+}

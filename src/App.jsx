@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Route, Routes, useNavigate, useParams } from 'react-router-dom'
-import { getPublishedServices, isSupabaseConfigured } from './lib/supabase'
+import { createCategory, deleteCategory, getCategories, getPublishedServices, isCategoryAdmin, isSupabaseConfigured, supabase, updateCategory } from './lib/supabase'
+import './categoryAdmin.css'
 
 function Header() {
-  return <header className="site-header"><Link to="/" className="brand"><span className="brand-mark">OC</span><span>oficios <i>cerca</i></span></Link><nav><Link to="/buscar">Explorar servicios</Link><Link to="/prestadores">Ofrece tus servicios</Link></nav><div className="header-actions"><button className="icon-button" aria-label="Notificaciones">♧</button><button className="user-button">Entrar <span>→</span></button></div></header>
+  return <header className="site-header"><Link to="/" className="brand"><span className="brand-mark">OC</span><span>oficios <i>cerca</i></span></Link><nav><Link to="/buscar">Explorar servicios</Link><Link to="/prestadores">Ofrece tus servicios</Link><Link to="/admin/categorias">Administrar</Link></nav><div className="header-actions"><button className="icon-button" aria-label="Notificaciones">♧</button><button className="user-button">Entrar <span>→</span></button></div></header>
 }
 
 function Home({ services, categories, loading }) {
@@ -113,8 +114,220 @@ function ServiceDetail({ services, loading, loadError }) {
 
 function Providers() { return <main className="provider-page"><div className="provider-intro"><p className="eyebrow">PARA PRESTADORES</p><h1>Haz que tu oficio<br /><em>llegue más lejos.</em></h1><p>Ofrece tus servicios de forma gratuita y encuentra nuevos clientes en tu comuna.</p><button className="dark-button">Crear mi perfil <span>→</span></button></div><div className="provider-steps">{[['01', 'Crea tu perfil', 'Cuéntanos quién eres y qué sabes hacer.'], ['02', 'Publica tu servicio', 'Agrega tus fotos, precios y zonas de atención.'], ['03', 'Conecta con clientes', 'Recibe contactos de personas interesadas.']].map(([number, title, text]) => <div className="step" key={number}><span>{number}</span><h2>{title}</h2><p>{text}</p></div>)}</div></main> }
 
+function CategoriesAdminPage() {
+  const [session, setSession] = useState(null)
+  const [authLoading, setAuthLoading] = useState(true)
+  const [adminLoading, setAdminLoading] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [categories, setCategories] = useState([])
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [recoveryMode, setRecoveryMode] = useState(new URLSearchParams(window.location.search).get('recovery') === 'true')
+  const [draftName, setDraftName] = useState('')
+  const [editingName, setEditingName] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [notice, setNotice] = useState('')
+
+  useEffect(() => {
+    if (!supabase) {
+      setAuthLoading(false)
+      return
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      setSession(nextSession)
+      if (event === 'PASSWORD_RECOVERY') setRecoveryMode(true)
+      setAuthLoading(false)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const userId = session?.user?.id
+
+  useEffect(() => {
+    if (!supabase || !userId) {
+      setIsAdmin(false)
+      setCategories([])
+      setAdminLoading(false)
+      return
+    }
+
+    let cancelled = false
+    setAdminLoading(true)
+
+    async function loadAdminCategories() {
+      const { data: authorized, error: roleError } = await isCategoryAdmin()
+      if (cancelled) return
+      if (roleError) {
+        setNotice('No se pudo verificar el permiso. Ejecuta primero el schema.sql actualizado en Supabase.')
+        setIsAdmin(false)
+        setAdminLoading(false)
+        return
+      }
+
+      setIsAdmin(authorized === true)
+      if (!authorized) {
+        setAdminLoading(false)
+        return
+      }
+
+      const { data, error } = await getCategories()
+      if (cancelled) return
+      if (error) setNotice('No se pudieron cargar las categorías.')
+      else setCategories(data || [])
+      setAdminLoading(false)
+    }
+
+    loadAdminCategories().catch(() => {
+      if (cancelled) return
+      setNotice('No se pudo conectar con Supabase.')
+      setAdminLoading(false)
+    })
+
+    return () => { cancelled = true }
+  }, [userId])
+
+  async function handleLogin(event) {
+    event.preventDefault()
+    if (!supabase) return
+
+    setBusy(true)
+    setNotice('')
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) setNotice('No se pudo iniciar sesión. Revisa tus credenciales.')
+    setBusy(false)
+  }
+
+  async function handlePasswordReset() {
+    if (!supabase || !email.trim()) return
+
+    setBusy(true)
+    setNotice('')
+    const redirectTo = `${window.location.origin}/admin/categorias?recovery=true`
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo })
+    setNotice(error ? 'No se pudo enviar el enlace. Revisa la configuración de correo y URL de Supabase.' : 'Si el correo está registrado, recibirás un enlace para crear una contraseña.')
+    setBusy(false)
+  }
+
+  async function handleSetPassword(event) {
+    event.preventDefault()
+    if (!supabase) return
+
+    setBusy(true)
+    setNotice('')
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) {
+      setNotice('No se pudo actualizar la contraseña. Usa una contraseña de al menos seis caracteres.')
+      setBusy(false)
+      return
+    }
+
+    setRecoveryMode(false)
+    setNewPassword('')
+    setPassword('')
+    window.history.replaceState({}, '', '/admin/categorias')
+    setNotice('Contraseña actualizada. Tu cuenta ya puede iniciar sesión.')
+    setBusy(false)
+  }
+
+  async function handleSaveCategory(event) {
+    event.preventDefault()
+    const name = draftName.trim()
+    if (!name) return
+
+    setBusy(true)
+    setNotice('')
+    const { error } = editingName
+      ? await updateCategory(editingName, name)
+      : await createCategory(name)
+
+    if (error) {
+      setNotice(error.code === '23505' ? 'Ya existe una categoría con ese nombre.' : 'No se pudo guardar la categoría.')
+      setBusy(false)
+      return
+    }
+
+    const { data, error: loadError } = await getCategories()
+    if (loadError) setNotice('La categoría se guardó, pero no se pudo actualizar la lista.')
+    else setCategories(data || [])
+    setDraftName('')
+    setEditingName(null)
+    setBusy(false)
+  }
+
+  async function handleDeleteCategory(name) {
+    if (!window.confirm(`¿Eliminar la categoría "${name}"?`)) return
+
+    setBusy(true)
+    setNotice('')
+    const { error } = await deleteCategory(name)
+    if (error) {
+      setNotice(error.code === '23503' ? 'No puedes eliminar una categoría que tiene servicios publicados.' : 'No se pudo eliminar la categoría.')
+      setBusy(false)
+      return
+    }
+
+    setCategories((current) => current.filter((category) => category.name !== name))
+    setBusy(false)
+  }
+
+  async function handleLogout() {
+    if (!supabase) return
+    await supabase.auth.signOut()
+    setNotice('')
+  }
+
+  return (
+    <main className="category-admin-page">
+      <header className="category-admin-heading">
+        <div>
+          <p className="eyebrow">ADMINISTRACIÓN</p>
+          <h1>Administrar categorías</h1>
+          <p>Gestiona las categorías disponibles para las publicaciones.</p>
+        </div>
+        {session && <button type="button" onClick={handleLogout}>Cerrar sesión</button>}
+      </header>
+
+      {!isSupabaseConfigured && <p className="category-admin-notice">Configura Supabase antes de administrar categorías.</p>}
+      {isSupabaseConfigured && authLoading && <p className="category-admin-notice">Comprobando sesión...</p>}
+      {isSupabaseConfigured && !authLoading && recoveryMode && session && <form className="category-admin-login" onSubmit={handleSetPassword}>
+        <label>Nueva contraseña<input type="password" autoComplete="new-password" minLength={6} required value={newPassword} onChange={(event) => setNewPassword(event.target.value)} /></label>
+        <button type="submit" disabled={busy}>{busy ? 'Guardando...' : 'Guardar contraseña'}</button>
+      </form>}
+      {isSupabaseConfigured && !authLoading && !session && !recoveryMode && <form className="category-admin-login" onSubmit={handleLogin}>
+        <label>Correo electrónico<input type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
+        <label>Contraseña<input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></label>
+        <button type="submit" disabled={busy}>{busy ? 'Ingresando...' : 'Iniciar sesión'}</button>
+        <button type="button" className="category-admin-reset" disabled={busy || !email.trim()} onClick={handlePasswordReset}>Enviar enlace para crear contraseña</button>
+      </form>}
+      {isSupabaseConfigured && !authLoading && recoveryMode && !session && <p className="category-admin-notice">Validando el enlace de recuperación...</p>}
+      {isSupabaseConfigured && session && adminLoading && <p className="category-admin-notice">Verificando permisos...</p>}
+      {isSupabaseConfigured && session && !adminLoading && !isAdmin && <p className="category-admin-notice">Esta cuenta no tiene permisos para administrar categorías.</p>}
+      {isSupabaseConfigured && session && isAdmin && !adminLoading && <section className="category-admin-panel">
+        <h2>{editingName ? 'Editar categoría' : 'Nueva categoría'}</h2>
+        <form className="category-admin-form" onSubmit={handleSaveCategory}>
+          <input aria-label="Nombre de categoría" maxLength={60} required value={draftName} onChange={(event) => setDraftName(event.target.value)} placeholder="Nombre de categoría" />
+          <button type="submit" disabled={busy}>{editingName ? 'Guardar cambios' : 'Crear categoría'}</button>
+          {editingName && <button type="button" onClick={() => { setEditingName(null); setDraftName('') }}>Cancelar</button>}
+        </form>
+        {categories.length ? <ul className="category-admin-list">{categories.map((category) => <li className="category-admin-row" key={category.name}>
+          <strong>{category.name}</strong>
+          <div className="category-admin-actions">
+            <button type="button" disabled={busy} onClick={() => { setEditingName(category.name); setDraftName(category.name) }}>Editar</button>
+            <button type="button" disabled={busy} onClick={() => handleDeleteCategory(category.name)}>Eliminar</button>
+          </div>
+        </li>)}</ul> : <p className="category-admin-notice">Todavía no hay categorías.</p>}
+      </section>}
+      {notice && <p className="category-admin-notice" role="status">{notice}</p>}
+    </main>
+  )
+}
+
 function App() {
   const [services, setServices] = useState([])
+  const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(isSupabaseConfigured)
   const [loadError, setLoadError] = useState(isSupabaseConfigured ? '' : 'Configura Supabase para cargar publicaciones.')
 
@@ -122,10 +335,12 @@ function App() {
     if (!isSupabaseConfigured) return
 
     let cancelled = false
-    getPublishedServices().then(({ data, error }) => {
+    Promise.all([getPublishedServices(), getCategories()]).then(([serviceResult, categoryResult]) => {
       if (cancelled) return
-      if (error) setLoadError('No pudimos cargar las publicaciones desde Supabase.')
-      else setServices(data || [])
+      if (serviceResult.error) setLoadError('No pudimos cargar las publicaciones desde Supabase.')
+      else setServices(serviceResult.data || [])
+      if (categoryResult.error) setLoadError('No pudimos cargar categorías. Ejecuta el schema.sql actualizado en Supabase.')
+      else setCategories((categoryResult.data || []).map((category) => category.name))
       setLoading(false)
     }).catch(() => {
       if (cancelled) return
@@ -136,9 +351,7 @@ function App() {
     return () => { cancelled = true }
   }, [])
 
-  const categories = [...new Set(services.map((service) => service.category).filter(Boolean))]
-
-  return <><Header /><Routes><Route path="/" element={<Home services={services} categories={categories} loading={loading} />} /><Route path="/buscar" element={<SearchPage services={services} categories={categories} loading={loading} loadError={loadError} />} /><Route path="/servicio/:id" element={<ServiceDetail services={services} loading={loading} loadError={loadError} />} /><Route path="/prestadores" element={<Providers />} /></Routes><footer><span>oficios <i>cerca</i></span><small>Una forma más humana de encontrar ayuda.</small><span>© 2026</span></footer></>
+  return <><Header /><Routes><Route path="/" element={<Home services={services} categories={categories} loading={loading} />} /><Route path="/buscar" element={<SearchPage services={services} categories={categories} loading={loading} loadError={loadError} />} /><Route path="/servicio/:id" element={<ServiceDetail services={services} loading={loading} loadError={loadError} />} /><Route path="/prestadores" element={<Providers />} /><Route path="/admin/categorias" element={<CategoriesAdminPage />} /></Routes><footer><span>oficios <i>cerca</i></span><small>Una forma más humana de encontrar ayuda.</small><span>© 2026</span></footer></>
 }
 
 export default App

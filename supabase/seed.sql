@@ -1,3 +1,23 @@
+insert into public.categories (name)
+values
+  ('Hogar'),
+  ('Belleza'),
+  ('Reparaciones'),
+  ('Clases'),
+  ('Jardinería'),
+  ('Eventos')
+on conflict (name) do nothing;
+
+insert into public.categories (name)
+values
+  ('Hogar'),
+  ('Belleza'),
+  ('Reparaciones'),
+  ('Clases'),
+  ('Jardinería'),
+  ('Eventos')
+on conflict (name) do nothing;
+
 insert into public.services (
   title,
   provider_name,

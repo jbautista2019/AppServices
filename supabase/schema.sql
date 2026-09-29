@@ -13,6 +13,60 @@ create table if not exists public.services (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.categories (
+  name text primary key check (length(btrim(name)) > 0),
+  created_at timestamptz not null default now()
+);
+
+insert into public.categories (name)
+select distinct category
+from public.services
+where category is not null and category <> ''
+on conflict (name) do nothing;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'services_category_fkey'
+      and conrelid = 'public.services'::regclass
+  ) then
+    alter table public.services
+      add constraint services_category_fkey
+      foreign key (category)
+      references public.categories (name)
+      on update cascade
+      on delete restrict;
+  end if;
+end
+$$;
+
+create table if not exists public.category_admins (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+
+alter table public.category_admins enable row level security;
+revoke all on public.category_admins from public, anon, authenticated;
+
+create or replace function public.is_category_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.category_admins
+    where user_id = (select auth.uid())
+  );
+$$;
+
+revoke all on function public.is_category_admin() from public;
+grant execute on function public.is_category_admin() to authenticated;
+
 alter table public.services enable row level security;
 
 drop policy if exists "Published services are public" on public.services;
@@ -33,3 +87,21 @@ create index if not exists services_active_created_at_idx
 grant select on public.services to anon, authenticated;
 grant insert, update, delete on public.services to authenticated;
 grant usage, select on sequence public.services_id_seq to authenticated;
+
+alter table public.categories enable row level security;
+
+drop policy if exists "Categories are public" on public.categories;
+create policy "Categories are public"
+  on public.categories for select
+  to anon, authenticated
+  using (true);
+
+drop policy if exists "Admins manage categories" on public.categories;
+create policy "Admins manage categories"
+  on public.categories for all
+  to authenticated
+  using (public.is_category_admin())
+  with check (public.is_category_admin());
+
+grant select on public.categories to anon, authenticated;
+grant insert, update, delete on public.categories to authenticated;
