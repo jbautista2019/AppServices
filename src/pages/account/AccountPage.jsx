@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '../../utils/supabase'
 
 export default function AccountPage({ initialMode }) {
   const [mode, setMode] = useState(initialMode)
@@ -115,6 +115,7 @@ export default function AccountPage({ initialMode }) {
         {authLoading ? <p>Comprobando sesión...</p> : session ? <div className="account-session">
           <p className="eyebrow">SESIÓN ACTIVA</p>
           <strong>{session.user.email}</strong>
+          <Link className="account-profile-link" to="/perfil">Ver y editar mi perfil <span>→</span></Link>
           <button type="button" onClick={handleLogout}>Cerrar sesión</button>
         </div> : <>
           <div className="account-tabs" role="tablist" aria-label="Acceso a la cuenta">

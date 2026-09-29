@@ -572,6 +572,32 @@
   justify-self: start;
 }
 
+.account-profile-link {
+  display: inline-flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.account-profile-link:hover {
+  background: var(--cream);
+}
+
+.account-profile-link span {
+  color: var(--orange);
+}
+
+.account-form input:disabled {
+  background: var(--cream);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
 @media (max-width: 600px) {
   .category-admin-toast {
     top: 88px;

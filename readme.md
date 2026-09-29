@@ -59,6 +59,17 @@ npx --yes supabase functions deploy admin-users
 
 La función usa `SUPABASE_URL`, `SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY` del entorno de Edge Functions de Supabase. Solo usuarios cuyo UUID esté en `public.category_admins` pueden acceder. Las cuentas administradoras no se pueden inhabilitar desde este módulo.
 
+### Estructura del frontend
+
+```text
+src/
+	app/          Rutas y carga global de datos
+	components/   Componentes reutilizables
+	pages/        Páginas agrupadas por módulo
+	styles/       Estilos globales, administrativos y de conexión
+	utils/        Cliente y funciones de Supabase
+```
+
 ### Comandos
 
 ```bash

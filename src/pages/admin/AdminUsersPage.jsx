@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { isCategoryAdmin, isSupabaseConfigured, manageUsers, supabase } from '../../lib/supabase'
+import { isCategoryAdmin, isSupabaseConfigured, manageUsers, supabase } from '../../utils/supabase'
 
 export default function AdminUsersPage() {
   const [session, setSession] = useState(null)

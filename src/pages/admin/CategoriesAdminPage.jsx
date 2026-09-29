@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { createCategory, deleteCategory, getCategories, isCategoryAdmin, isSupabaseConfigured, supabase, updateCategory } from '../../lib/supabase'
+import { createCategory, deleteCategory, getCategories, isCategoryAdmin, isSupabaseConfigured, supabase, updateCategory } from '../../utils/supabase'
 
 export default function CategoriesAdminPage() {
   const [session, setSession] = useState(null)

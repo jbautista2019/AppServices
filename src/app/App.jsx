@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import Header from '../components/layout/Header'
 import AccountPage from '../pages/account/AccountPage'
+import ProfilePage from '../pages/account/ProfilePage'
 import AdminUsersPage from '../pages/admin/AdminUsersPage'
 import CategoriesAdminPage from '../pages/admin/CategoriesAdminPage'
 import HomePage from '../pages/home/HomePage'
-import ProvidersPage from '../pages/ProvidersPage'
+import ProvidersPage from '../pages/providers/ProvidersPage'
 import SearchPage from '../pages/search/SearchPage'
 import ServiceDetailPage from '../pages/services/ServiceDetailPage'
-import { getCategories, getPublishedServices, isSupabaseConfigured } from '../lib/supabase'
-import '../categoryAdmin.css'
+import { getCategories, getPublishedServices, isSupabaseConfigured } from '../utils/supabase'
 
 export default function App() {
   const [services, setServices] = useState([])
@@ -46,6 +46,7 @@ export default function App() {
       <Route path="/prestadores" element={<ProvidersPage />} />
       <Route path="/cuenta" element={<AccountPage initialMode="login" />} />
       <Route path="/registro" element={<AccountPage initialMode="signup" />} />
+      <Route path="/perfil" element={<ProfilePage />} />
       <Route path="/admin/categorias" element={<CategoriesAdminPage />} />
       <Route path="/admin/usuarios" element={<AdminUsersPage />} />
     </Routes>
