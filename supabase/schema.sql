@@ -15,8 +15,12 @@ create table if not exists public.services (
 
 create table if not exists public.categories (
   name text primary key check (length(btrim(name)) > 0),
+  image_url text,
   created_at timestamptz not null default now()
 );
+
+alter table public.categories
+  add column if not exists image_url text;
 
 insert into public.categories (name)
 select distinct category

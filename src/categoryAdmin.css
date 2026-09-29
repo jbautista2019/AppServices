@@ -57,6 +57,23 @@
   flex: 1;
 }
 
+.category-admin-image-preview {
+  display: block;
+  width: 112px;
+  height: 84px;
+  margin: -6px 0 20px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  object-fit: cover;
+}
+
+.category-tile img.category-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
 .category-admin-form button,
 .category-admin-login button,
 .category-admin-heading > button {
@@ -89,6 +106,29 @@
   gap: 20px;
   min-height: 62px;
   border-bottom: 1px solid var(--line);
+}
+
+.category-admin-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.category-admin-thumbnail {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  object-fit: cover;
+}
+
+.category-admin-thumbnail--empty {
+  display: grid;
+  place-items: center;
+  color: var(--orange);
+  background: white;
 }
 
 .category-admin-actions {

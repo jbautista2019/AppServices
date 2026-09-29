@@ -13,7 +13,7 @@ function Home({ services, categories, loading }) {
   const submit = (event) => { event.preventDefault(); navigate(`/buscar${query ? `?q=${encodeURIComponent(query)}` : ''}`) }
   return <>
     <section className="hero"><div className="hero-copy"><p className="eyebrow">EL SERVICIO QUE NECESITAS, MÁS CERCA</p><h1>Encuentra a alguien que <em>lo haga bien.</em></h1><p className="hero-lead">Conecta con personas reales, recomendadas y disponibles para ayudarte en lo cotidiano.</p><form className="search-bar" onSubmit={submit}><span className="search-icon">⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="¿Qué servicio estás buscando?" /><button type="submit">Buscar <span>→</span></button></form><div className="search-hint"><span>⌖</span> Explora servicios disponibles cerca de ti</div></div><div className="hero-art"><div className="art-note">Personas reales.<br /><strong>Trabajos bien hechos.</strong></div><div className="art-circle"><span>✦</span></div></div></section>
-    <main className="home-content"><section className="section-heading"><div><p className="eyebrow">TODO LO QUE BUSCAS</p><h2>Explora por categoría</h2></div><Link to="/buscar" className="text-link">Ver todas <span>→</span></Link></section><div className="category-grid">{categories.map((category) => { const count = services.filter((service) => service.category === category).length; return <Link to={`/buscar?category=${encodeURIComponent(category)}`} className="category-tile" key={category}><span className="category-icon">✦</span><strong>{category}</strong><small>{count.toLocaleString('es-CL')} {count === 1 ? 'servicio' : 'servicios'}</small><span className="tile-arrow">↗</span></Link> })}{!loading && !categories.length && <p>No hay categorías publicadas todavía.</p>}{loading && !categories.length && <p>Cargando categorías...</p>}</div><section className="feature-band"><div><p className="eyebrow">PARA QUIENES HACEN</p><h2>Tu oficio merece<br /><em>ser encontrado.</em></h2><p>Publica tus servicios gratis y llega a personas que necesitan exactamente lo que tú sabes hacer.</p><Link to="/prestadores" className="dark-button">Quiero ofrecer mis servicios <span>→</span></Link></div><div className="feature-quote"><span>“</span><p>Encontré un electricista para mi mamá en menos de diez minutos.</p><small>— Camila, La Reina</small></div></section></main>
+    <main className="home-content"><section className="section-heading"><div><p className="eyebrow">TODO LO QUE BUSCAS</p><h2>Explora por categoría</h2></div><Link to="/buscar" className="text-link">Ver todas <span>→</span></Link></section><div className="category-grid">{categories.map((category) => { const count = services.filter((service) => service.category === category.name).length; return <Link to={`/buscar?category=${encodeURIComponent(category.name)}`} className="category-tile" key={category.name}>{category.image_url ? <img className="category-icon" src={category.image_url} alt="" /> : <span className="category-icon">✦</span>}<strong>{category.name}</strong><small>{count.toLocaleString('es-CL')} {count === 1 ? 'servicio' : 'servicios'}</small><span className="tile-arrow">↗</span></Link> })}{!loading && !categories.length && <p>No hay categorías publicadas todavía.</p>}{loading && !categories.length && <p>Cargando categorías...</p>}</div><section className="feature-band"><div><p className="eyebrow">PARA QUIENES HACEN</p><h2>Tu oficio merece<br /><em>ser encontrado.</em></h2><p>Publica tus servicios gratis y llega a personas que necesitan exactamente lo que tú sabes hacer.</p><Link to="/prestadores" className="dark-button">Quiero ofrecer mis servicios <span>→</span></Link></div><div className="feature-quote"><span>“</span><p>Encontré un electricista para mi mamá en menos de diez minutos.</p><small>— Camila, La Reina</small></div></section></main>
   </>
 }
 
@@ -65,7 +65,7 @@ function SearchPage({ services, categories, loading, loadError }) {
             Servicio o categoría
             <select value={category} onChange={(event) => { setCategory(event.target.value); setCurrentPage(1) }}>
               <option>Todas</option>
-              {categories.map((item) => <option key={item}>{item}</option>)}
+              {categories.map((item) => <option key={item.name}>{item.name}</option>)}
             </select>
           </label>
           <label>
@@ -125,6 +125,7 @@ function CategoriesAdminPage() {
   const [newPassword, setNewPassword] = useState('')
   const [recoveryMode, setRecoveryMode] = useState(new URLSearchParams(window.location.search).get('recovery') === 'true')
   const [draftName, setDraftName] = useState('')
+  const [draftImageUrl, setDraftImageUrl] = useState('')
   const [editingName, setEditingName] = useState(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
@@ -252,9 +253,10 @@ function CategoriesAdminPage() {
 
     setBusy(true)
     setNotice('')
+    const imageUrl = draftImageUrl.trim()
     const { error } = editingName
-      ? await updateCategory(editingName, name)
-      : await createCategory(name)
+      ? await updateCategory(editingName, name, imageUrl)
+      : await createCategory(name, imageUrl)
 
     if (error) {
       setNoticeType('error')
@@ -273,6 +275,7 @@ function CategoriesAdminPage() {
       setNotice(editingName ? 'Categoría actualizada correctamente.' : 'Categoría creada correctamente.')
     }
     setDraftName('')
+    setDraftImageUrl('')
     setEditingName(null)
     setBusy(false)
   }
@@ -332,13 +335,15 @@ function CategoriesAdminPage() {
         <h2>{editingName ? 'Editar categoría' : 'Nueva categoría'}</h2>
         <form className="category-admin-form" onSubmit={handleSaveCategory}>
           <input aria-label="Nombre de categoría" maxLength={60} required value={draftName} onChange={(event) => setDraftName(event.target.value)} placeholder="Nombre de categoría" />
+          <input aria-label="URL de imagen" type="url" value={draftImageUrl} onChange={(event) => setDraftImageUrl(event.target.value)} placeholder="https://... imagen de categoría" />
           <button type="submit" disabled={busy}>{editingName ? 'Guardar cambios' : 'Crear categoría'}</button>
-          {editingName && <button type="button" onClick={() => { setEditingName(null); setDraftName('') }}>Cancelar</button>}
+          {editingName && <button type="button" onClick={() => { setEditingName(null); setDraftName(''); setDraftImageUrl('') }}>Cancelar</button>}
         </form>
+        {draftImageUrl && <img className="category-admin-image-preview" src={draftImageUrl} alt="Vista previa de la categoría" />}
         {categories.length ? <ul className="category-admin-list">{categories.map((category) => <li className="category-admin-row" key={category.name}>
-          <strong>{category.name}</strong>
+          <div className="category-admin-identity">{category.image_url ? <img className="category-admin-thumbnail" src={category.image_url} alt="" /> : <span className="category-admin-thumbnail category-admin-thumbnail--empty" aria-hidden="true">✦</span>}<strong>{category.name}</strong></div>
           <div className="category-admin-actions">
-            <button type="button" disabled={busy} onClick={() => { setEditingName(category.name); setDraftName(category.name) }}>Editar</button>
+            <button type="button" disabled={busy} onClick={() => { setEditingName(category.name); setDraftName(category.name); setDraftImageUrl(category.image_url || '') }}>Editar</button>
             <button type="button" disabled={busy} onClick={() => handleDeleteCategory(category.name)}>Eliminar</button>
           </div>
         </li>)}</ul> : <p className="category-admin-notice">Todavía no hay categorías.</p>}
@@ -367,7 +372,7 @@ function App() {
       if (serviceResult.error) setLoadError('No pudimos cargar las publicaciones desde Supabase.')
       else setServices(serviceResult.data || [])
       if (categoryResult.error) setLoadError('No pudimos cargar categorías. Ejecuta el schema.sql actualizado en Supabase.')
-      else setCategories((categoryResult.data || []).map((category) => category.name))
+      else setCategories(categoryResult.data || [])
       setLoading(false)
     }).catch(() => {
       if (cancelled) return

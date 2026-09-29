@@ -4,7 +4,7 @@ MVP en React + Vite conectado opcionalmente con Supabase.
 
 ### Configurar Supabase
 
-1. En Supabase, abre **SQL Editor**, crea una consulta nueva y ejecuta `supabase/schema.sql`. Puedes volver a ejecutarlo para aplicar la tabla de categorías y migrar los nombres que ya existen en servicios.
+1. En Supabase, abre **SQL Editor**, crea una consulta nueva y ejecuta `supabase/schema.sql`. Puedes volver a ejecutarlo para aplicar la tabla de categorías, su columna `image_url` y migrar los nombres que ya existen en servicios.
 2. Ejecuta también `supabase/seed.sql` desde el **SQL Editor** para cargar categorías y publicaciones de prueba. Puedes volver a ejecutarlo sin duplicar esas filas.
 3. Si aún no tienes `.env.local`, copia `.env.example` como `.env.local`.
 4. En Supabase ve a **Project Settings > API** y completa:
@@ -32,6 +32,8 @@ on conflict (user_id) do nothing;
 ```
 
 5. Abre `/admin/categorias` e inicia sesión con el correo y la contraseña de Supabase Auth. Solo los UUID registrados pueden crear, renombrar o eliminar categorías.
+
+La imagen de cada categoría se configura pegando una URL pública en el formulario; Supabase guarda esa URL en `public.categories.image_url`.
 
 Al renombrar una categoría se actualizan también sus servicios. La base de datos impide eliminar categorías que todavía tengan servicios asociados.
 

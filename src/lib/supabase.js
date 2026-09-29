@@ -23,7 +23,7 @@ export async function getCategories() {
 
   return supabase
     .from('categories')
-    .select('name')
+    .select('name, image_url')
     .order('name', { ascending: true })
 }
 
@@ -33,16 +33,16 @@ export async function isCategoryAdmin() {
   return supabase.rpc('is_category_admin')
 }
 
-export async function createCategory(name) {
+export async function createCategory(name, imageUrl) {
   if (!supabase) return { error: new Error('Supabase no está configurado.') }
 
-  return supabase.from('categories').insert({ name })
+  return supabase.from('categories').insert({ name, image_url: imageUrl || null })
 }
 
-export async function updateCategory(currentName, name) {
+export async function updateCategory(currentName, name, imageUrl) {
   if (!supabase) return { error: new Error('Supabase no está configurado.') }
 
-  return supabase.from('categories').update({ name }).eq('name', currentName)
+  return supabase.from('categories').update({ name, image_url: imageUrl || null }).eq('name', currentName)
 }
 
 export async function deleteCategory(name) {
