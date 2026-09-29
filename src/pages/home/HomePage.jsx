@@ -1,0 +1,13 @@
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+
+export default function HomePage({ services, categories, loading }) {
+  const [query, setQuery] = useState('')
+  const navigate = useNavigate()
+  const submit = (event) => { event.preventDefault(); navigate(`/buscar${query ? `?q=${encodeURIComponent(query)}` : ''}`) }
+
+  return <>
+    <section className="hero"><div className="hero-copy"><p className="eyebrow">EL SERVICIO QUE NECESITAS, MÁS CERCA</p><h1>Encuentra a alguien que <em>lo haga bien.</em></h1><p className="hero-lead">Conecta con personas reales, recomendadas y disponibles para ayudarte en lo cotidiano.</p><form className="search-bar" onSubmit={submit}><span className="search-icon">⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="¿Qué servicio estás buscando?" /><button type="submit">Buscar <span>→</span></button></form><div className="search-hint"><span>⌖</span> Explora servicios disponibles cerca de ti</div></div><div className="hero-art"><div className="art-note">Personas reales.<br /><strong>Trabajos bien hechos.</strong></div><div className="art-circle"><span>✦</span></div></div></section>
+    <main className="home-content"><section className="section-heading"><div><p className="eyebrow">TODO LO QUE BUSCAS</p><h2>Explora por categoría</h2></div><Link to="/buscar" className="text-link">Ver todas <span>→</span></Link></section><div className="category-grid">{categories.map((category) => { const count = services.filter((service) => service.category === category.name).length; return <Link to={`/buscar?category=${encodeURIComponent(category.name)}`} className="category-tile" key={category.name}>{category.image_url ? <img className="category-icon" src={category.image_url} alt="" /> : <span className="category-icon">✦</span>}<strong>{category.name}</strong><small>{count.toLocaleString('es-CL')} {count === 1 ? 'servicio' : 'servicios'}</small><span className="tile-arrow">↗</span></Link> })}{!loading && !categories.length && <p>No hay categorías publicadas todavía.</p>}{loading && !categories.length && <p>Cargando categorías...</p>}</div><section className="feature-band"><div><p className="eyebrow">PARA QUIENES HACEN</p><h2>Tu oficio merece<br /><em>ser encontrado.</em></h2><p>Publica tus servicios gratis y llega a personas que necesitan exactamente lo que tú sabes hacer.</p><Link to="/prestadores" className="dark-button">Quiero ofrecer mis servicios <span>→</span></Link></div><div className="feature-quote"><span>“</span><p>Encontré un electricista para mi mamá en menos de diez minutos.</p><small>— Camila, La Reina</small></div></section></main>
+  </>
+}

@@ -20,7 +20,9 @@ La portada, la búsqueda y el detalle cargan publicaciones activas desde Supabas
 
 ### Crear una cuenta pública
 
-En Supabase, habilita el proveedor **Email** y la opción de permitir nuevos registros en **Authentication > Sign In / Providers**. En **Authentication > URL Configuration > Redirect URLs**, permite `http://localhost:5173/cuenta` (ajusta el puerto si Vite utiliza otro). Desde el header, cualquier visitante puede abrir **Crear cuenta** para registrarse con nombre, correo y contraseña. Si la confirmación por correo está activada, deberá confirmar el mensaje antes de iniciar sesión. Las cuentas públicas no reciben permisos de administración.
+En Supabase, habilita el proveedor **Email** y la opción de permitir nuevos registros en **Authentication > Sign In / Providers**. En **Authentication > URL Configuration > Redirect URLs**, permite `http://localhost:5173/cuenta` (ajusta el puerto si Vite utiliza otro). Desde el header, cualquier visitante puede abrir **Crear cuenta** para registrarse con nombre, correo y contraseña, o continuar con Google.
+
+Para habilitar Google, configura un cliente OAuth en Google Cloud y agrega como URI de redirección autorizada `https://<PROJECT_REF>.supabase.co/auth/v1/callback`. Luego ingresa el Client ID y Client Secret en **Supabase > Authentication > Sign In / Providers > Google** y habilita el proveedor. Mantén `http://localhost:5173/cuenta` en las Redirect URLs de Supabase para el retorno a la aplicación local. En producción, agrega también la URL pública correspondiente. Las cuentas públicas no reciben permisos de administración.
 
 ### Administrar categorías
 

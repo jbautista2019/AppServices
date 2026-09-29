@@ -1,0 +1,3 @@
+export default function ProvidersPage() {
+  return <main className="provider-page"><div className="provider-intro"><p className="eyebrow">PARA PRESTADORES</p><h1>Haz que tu oficio<br /><em>llegue más lejos.</em></h1><p>Ofrece tus servicios de forma gratuita y encuentra nuevos clientes en tu comuna.</p><button className="dark-button">Crear mi perfil <span>→</span></button></div><div className="provider-steps">{[['01', 'Crea tu perfil', 'Cuéntanos quién eres y qué sabes hacer.'], ['02', 'Publica tu servicio', 'Agrega tus fotos, precios y zonas de atención.'], ['03', 'Conecta con clientes', 'Recibe contactos de personas interesadas.']].map(([number, title, text]) => <div className="step" key={number}><span>{number}</span><h2>{title}</h2><p>{text}</p></div>)}</div></main>
+}
