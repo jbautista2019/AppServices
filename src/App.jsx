@@ -128,6 +128,7 @@ function CategoriesAdminPage() {
   const [editingName, setEditingName] = useState(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
+  const [noticeType, setNoticeType] = useState('info')
 
   useEffect(() => {
     if (!supabase) {
@@ -235,7 +236,19 @@ function CategoriesAdminPage() {
   async function handleSaveCategory(event) {
     event.preventDefault()
     const name = draftName.trim()
-    if (!name) return
+    if (!name) {
+      setNoticeType('error')
+      setNotice('Escribe un nombre para la categoría.')
+      return
+    }
+
+    const normalizedName = name.toLocaleLowerCase('es-CL')
+    const duplicate = categories.some((category) => category.name !== editingName && category.name.trim().toLocaleLowerCase('es-CL') === normalizedName)
+    if (duplicate) {
+      setNoticeType('error')
+      setNotice('Ya existe una categoría con ese nombre.')
+      return
+    }
 
     setBusy(true)
     setNotice('')
@@ -244,14 +257,21 @@ function CategoriesAdminPage() {
       : await createCategory(name)
 
     if (error) {
+      setNoticeType('error')
       setNotice(error.code === '23505' ? 'Ya existe una categoría con ese nombre.' : 'No se pudo guardar la categoría.')
       setBusy(false)
       return
     }
 
     const { data, error: loadError } = await getCategories()
-    if (loadError) setNotice('La categoría se guardó, pero no se pudo actualizar la lista.')
-    else setCategories(data || [])
+    if (loadError) {
+      setNoticeType('error')
+      setNotice('La categoría se guardó, pero no se pudo actualizar la lista.')
+    } else {
+      setCategories(data || [])
+      setNoticeType('success')
+      setNotice(editingName ? 'Categoría actualizada correctamente.' : 'Categoría creada correctamente.')
+    }
     setDraftName('')
     setEditingName(null)
     setBusy(false)
@@ -264,12 +284,15 @@ function CategoriesAdminPage() {
     setNotice('')
     const { error } = await deleteCategory(name)
     if (error) {
+      setNoticeType('error')
       setNotice(error.code === '23503' ? 'No puedes eliminar una categoría que tiene servicios publicados.' : 'No se pudo eliminar la categoría.')
       setBusy(false)
       return
     }
 
     setCategories((current) => current.filter((category) => category.name !== name))
+    setNoticeType('success')
+    setNotice('Categoría eliminada correctamente.')
     setBusy(false)
   }
 
@@ -320,7 +343,11 @@ function CategoriesAdminPage() {
           </div>
         </li>)}</ul> : <p className="category-admin-notice">Todavía no hay categorías.</p>}
       </section>}
-      {notice && <p className="category-admin-notice" role="status">{notice}</p>}
+      {notice && <div className={`category-admin-toast category-admin-toast--${noticeType}`} role={noticeType === 'error' ? 'alert' : 'status'}>
+        <span className="category-admin-toast-icon" aria-hidden="true">{noticeType === 'success' ? '✓' : '!'}</span>
+        <p>{notice}</p>
+        <button type="button" aria-label="Cerrar aviso" onClick={() => setNotice('')}>×</button>
+      </div>}
     </main>
   )
 }

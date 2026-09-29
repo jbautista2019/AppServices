@@ -25,6 +25,31 @@ where category is not null and category <> ''
 on conflict (name) do nothing;
 
 do $$
+declare
+  duplicate_category record;
+begin
+  for duplicate_category in
+    select
+      name,
+      first_value(name) over (partition by lower(btrim(name)) order by name) as canonical_name
+    from public.categories
+  loop
+    if duplicate_category.name <> duplicate_category.canonical_name then
+      update public.services
+      set category = duplicate_category.canonical_name
+      where category = duplicate_category.name;
+
+      delete from public.categories
+      where name = duplicate_category.name;
+    end if;
+  end loop;
+end
+$$;
+
+create unique index if not exists categories_name_normalized_uidx
+  on public.categories (lower(btrim(name)));
+
+do $$
 begin
   if not exists (
     select 1
