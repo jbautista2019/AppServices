@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, Route, Routes, useNavigate, useParams } from 'react-router-dom'
+import { getPublishedServices, isSupabaseConfigured } from './lib/supabase'
 
 const categories = [
   { name: 'Hogar', icon: '⌂', count: '1.240 servicios' },
@@ -10,13 +11,15 @@ const categories = [
   { name: 'Eventos', icon: '◌', count: '120 servicios' },
 ]
 
-const services = [
+const demoServices = [
   { id: 1, name: 'Gasfitería Juan Pérez', provider: 'Juan Pérez', category: 'Hogar', location: 'Maipú', rating: '4.8', price: '$20.000', image: 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&w=900&q=80', description: 'Instalaciones, reparaciones y mantención de redes de agua y gas. Trabajo garantizado y atención el mismo día en comunas del poniente de Santiago.' },
   { id: 2, name: 'Manicure Studio Nati', provider: 'Natalia Rojas', category: 'Belleza', location: 'Ñuñoa', rating: '5.0', price: '$15.000', image: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=900&q=80', description: 'Manicure permanente y diseños personalizados en un espacio tranquilo. También realizo atención a domicilio dentro de Ñuñoa y Providencia.' },
   { id: 3, name: 'TecnoFix Computación', provider: 'Matías Soto', category: 'Reparaciones', location: 'La Florida', rating: '4.9', price: '$18.000', image: 'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?auto=format&fit=crop&w=900&q=80', description: 'Diagnóstico, limpieza y reparación de notebooks y computadores. Recuperación de datos y soporte remoto para pequeños negocios.' },
   { id: 4, name: 'Jardines Vivos', provider: 'Claudia Muñoz', category: 'Jardinería', location: 'Las Condes', rating: '4.7', price: '$25.000', image: 'https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=900&q=80', description: 'Diseño y mantención de jardines, poda y asesoría para que tus plantas crezcan sanas todo el año.' },
   { id: 5, name: 'Clases de Matemática', provider: 'Diego Araya', category: 'Clases', location: 'Providencia', rating: '4.9', price: '$12.000', image: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=900&q=80', description: 'Clases particulares para enseñanza media y preparación PAES. Método práctico y material personalizado.' },
 ]
+
+const services = demoServices
 
 function Header() {
   return <header className="site-header"><Link to="/" className="brand"><span className="brand-mark">OC</span><span>oficios <i>cerca</i></span></Link><nav><Link to="/buscar">Explorar servicios</Link><Link to="/prestadores">Ofrece tus servicios</Link></nav><div className="header-actions"><button className="icon-button" aria-label="Notificaciones">♧</button><button className="user-button">Entrar <span>→</span></button></div></header>
@@ -36,8 +39,26 @@ function SearchPage() {
   const params = new URLSearchParams(window.location.search)
   const [query, setQuery] = useState(params.get('q') || '')
   const [category, setCategory] = useState(params.get('category') || 'Todas')
-  const filtered = useMemo(() => services.filter((service) => (!query || `${service.name} ${service.category} ${service.location}`.toLowerCase().includes(query.toLowerCase())) && (category === 'Todas' || service.category === category)), [query, category])
-  return <main className="results-page"><div className="results-intro"><p className="eyebrow">SERVICIOS CERCA DE TI</p><h1>Encuentra lo que necesitas.</h1><div className="compact-search"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Busca por servicio, nombre o comuna" /><button aria-label="Buscar">→</button></div></div><div className="results-layout"><aside className="filters"><div className="filter-title"><strong>Filtrar resultados</strong><button onClick={() => { setQuery(''); setCategory('Todas') }}>Limpiar</button></div><label>Servicio o categoría<select value={category} onChange={(event) => setCategory(event.target.value)}><option>Todas</option>{categories.map((item) => <option key={item.name}>{item.name}</option>)}</select></label><label>Ubicación<div className="filter-input">⌖ <span>¿Dónde?</span></div></label><label>Precio referencial<div className="price-row"><input placeholder="Desde" /><input placeholder="Hasta" /></div></label><label className="check-label"><input type="checkbox" /> Solo disponibles</label></aside><section className="listing"><div className="listing-top"><span><strong>{filtered.length}</strong> servicios encontrados</span><select aria-label="Ordenar"><option>Más relevantes</option><option>Mejor evaluados</option><option>Precio menor</option></select></div>{filtered.map((service) => <ServiceCard service={service} key={service.id} />)}{!filtered.length && <div className="empty-state"><strong>No encontramos resultados</strong><p>Prueba con otra categoría o término de búsqueda.</p></div>}<div className="pagination"><button className="active">1</button><button>2</button><button>3</button><span>...</span><button>8</button><button>→</button></div></section></div></main>
+  const [remoteServices, setRemoteServices] = useState(demoServices)
+  const [loading, setLoading] = useState(isSupabaseConfigured)
+  const [loadError, setLoadError] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+    getPublishedServices().then(({ data, error }) => {
+      if (cancelled) return
+      if (error) {
+        setLoadError('No pudimos cargar los servicios publicados. Mostramos ejemplos por ahora.')
+      } else if (data?.length) {
+        setRemoteServices(data.map((service) => ({ ...service, name: service.title, provider: service.provider_name, price: `$${Number(service.starting_price).toLocaleString('es-CL')}`, image: service.image_url || demoServices[0].image })))
+      }
+      setLoading(false)
+    })
+    return () => { cancelled = true }
+  }, [])
+
+  const filtered = useMemo(() => remoteServices.filter((service) => (!query || `${service.name} ${service.category} ${service.location}`.toLowerCase().includes(query.toLowerCase())) && (category === 'Todas' || service.category === category)), [query, category, remoteServices])
+  return <main className="results-page"><div className="results-intro"><p className="eyebrow">SERVICIOS CERCA DE TI</p><h1>Encuentra lo que necesitas.</h1><div className="compact-search"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Busca por servicio, nombre o comuna" /><button aria-label="Buscar">→</button></div></div><div className="results-layout"><aside className="filters"><div className="filter-title"><strong>Filtrar resultados</strong><button onClick={() => { setQuery(''); setCategory('Todas') }}>Limpiar</button></div><label>Servicio o categoría<select value={category} onChange={(event) => setCategory(event.target.value)}><option>Todas</option>{categories.map((item) => <option key={item.name}>{item.name}</option>)}</select></label><label>Ubicación<div className="filter-input">⌖ <span>¿Dónde?</span></div></label><label>Precio referencial<div className="price-row"><input placeholder="Desde" /><input placeholder="Hasta" /></div></label><label className="check-label"><input type="checkbox" /> Solo disponibles</label></aside><section className="listing"><div className="listing-top"><span><strong>{loading ? '...' : filtered.length}</strong> servicios encontrados</span><select aria-label="Ordenar"><option>Más relevantes</option><option>Mejor evaluados</option><option>Precio menor</option></select></div>{loadError && <p className="data-notice">{loadError}</p>}{filtered.map((service) => <ServiceCard service={service} key={service.id} />)}{!loading && !filtered.length && <div className="empty-state"><strong>No encontramos resultados</strong><p>Prueba con otra categoría o término de búsqueda.</p></div>}<div className="pagination"><button className="active">1</button><button>2</button><button>3</button><span>...</span><button>8</button><button>→</button></div></section></div></main>
 }
 
 function ServiceCard({ service }) { return <article className="service-card"><img src={service.image} alt="" /><div className="service-card-body"><div className="card-top"><span className="category-label">{service.category}</span><button className="save-button" aria-label="Guardar servicio">♡</button></div><Link to={`/servicio/${service.id}`}><h2>{service.name}</h2></Link><p className="provider">{service.provider} <span className="verified">✓</span></p><div className="service-meta"><span>★ {service.rating}</span><span>⌖ {service.location}</span></div><div className="card-bottom"><span>Desde <strong>{service.price}</strong></span><Link to={`/servicio/${service.id}`} className="small-link">Ver servicio <span>→</span></Link></div></div></article> }

@@ -1,0 +1,8 @@
+.data-notice {
+  margin: 0 0 16px;
+  padding: 12px 15px;
+  color: #7c5c2a;
+  background: #f8efd9;
+  border-left: 3px solid var(--orange);
+  font-size: 13px;
+}

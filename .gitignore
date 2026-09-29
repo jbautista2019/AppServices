@@ -1,0 +1,36 @@
+## Dependencies
+node_modules/
+
+## Build output
+dist/
+coverage/
+
+## Local environment variables and secrets
+.env
+.env.*
+!.env.example
+
+## Logs and temporary files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.tmp
+*.swp
+nota.txt
+## Tool caches
+.vite/
+.vitest/
+.cache/
+
+## Local Supabase state
+supabase/.temp/
+
+## Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+## Editor files
+.idea/
