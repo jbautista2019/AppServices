@@ -18,6 +18,10 @@ VITE_SUPABASE_ANON_KEY=tu-clave-anon-publica
 
 La portada, la búsqueda y el detalle cargan publicaciones activas desde Supabase. Los nombres de categoría vienen de `public.categories` y sus cantidades se calculan a partir de las publicaciones; la aplicación no incluye servicios demo.
 
+### Crear una cuenta pública
+
+En Supabase, habilita el proveedor **Email** y la opción de permitir nuevos registros en **Authentication > Sign In / Providers**. En **Authentication > URL Configuration > Redirect URLs**, permite `http://localhost:5173/cuenta` (ajusta el puerto si Vite utiliza otro). Desde el header, cualquier visitante puede abrir **Crear cuenta** para registrarse con nombre, correo y contraseña. Si la confirmación por correo está activada, deberá confirmar el mensaje antes de iniciar sesión. Las cuentas públicas no reciben permisos de administración.
+
 ### Administrar categorías
 
 1. En **Authentication > Users** de Supabase, crea el usuario que administrará las categorías.
@@ -36,6 +40,22 @@ on conflict (user_id) do nothing;
 La imagen de cada categoría se configura pegando una URL pública en el formulario; Supabase guarda esa URL en `public.categories.image_url`.
 
 Al renombrar una categoría se actualizan también sus servicios. La base de datos impide eliminar categorías que todavía tengan servicios asociados.
+
+### Administrar usuarios
+
+El módulo `/admin/usuarios` crea cuentas de Supabase Auth, actualiza nombre/correo/contraseña y habilita o inhabilita el acceso. Todas las operaciones administrativas pasan por una Edge Function; la clave `service_role` nunca se coloca en el frontend.
+
+Desde la raíz del proyecto, puedes usar Supabase CLI con `npx` sin instalarlo globalmente. Primero inicia sesión y vincula el proyecto con su referencia (el identificador al inicio de la URL `https://<PROJECT_REF>.supabase.co`):
+
+```bash
+npx --yes supabase login
+npx --yes supabase link --project-ref <PROJECT_REF>
+npx --yes supabase functions deploy admin-users
+```
+
+`supabase login` solicita un access token de tu cuenta Supabase. Pégalo directamente en la terminal, no en el código ni en el chat. `supabase link` puede solicitar la contraseña de la base de datos; introdúcela solo en la terminal.
+
+La función usa `SUPABASE_URL`, `SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY` del entorno de Edge Functions de Supabase. Solo usuarios cuyo UUID esté en `public.category_admins` pueden acceder. Las cuentas administradoras no se pueden inhabilitar desde este módulo.
 
 ### Comandos
 
