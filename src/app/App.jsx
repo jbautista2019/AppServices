@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import Footer from '../components/layout/Footer'
 import Header from '../components/layout/Header'
 import AccountPage from '../pages/account/AccountPage'
 import ProfilePage from '../pages/account/ProfilePage'
+import RegistrationModal from '../pages/account/RegistrationModal'
 import AdminUsersPage from '../pages/admin/AdminUsersPage'
 import CategoriesAdminPage from '../pages/admin/CategoriesAdminPage'
 import HomePage from '../pages/home/HomePage'
@@ -13,6 +14,13 @@ import ServiceDetailPage from '../pages/services/ServiceDetailPage'
 import { getCategories, getPublishedServices, isSupabaseConfigured } from '../utils/supabase'
 
 export default function App() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const registrationOpen = location.pathname === '/registro'
+  const backgroundLocation = location.state?.backgroundLocation
+  const pageLocation = registrationOpen
+    ? backgroundLocation || { ...location, pathname: '/', search: '', hash: '' }
+    : location
   const [services, setServices] = useState([])
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(isSupabaseConfigured)
@@ -40,17 +48,17 @@ export default function App() {
 
   return <>
     <Header />
-    <Routes>
+    <Routes location={pageLocation}>
       <Route path="/" element={<HomePage services={services} categories={categories} loading={loading} />} />
       <Route path="/buscar" element={<SearchPage services={services} categories={categories} loading={loading} loadError={loadError} />} />
       <Route path="/servicio/:id" element={<ServiceDetailPage services={services} loading={loading} loadError={loadError} />} />
       <Route path="/prestadores" element={<ProvidersPage />} />
       <Route path="/cuenta" element={<AccountPage initialMode="login" />} />
-      <Route path="/registro" element={<AccountPage initialMode="signup" />} />
       <Route path="/perfil" element={<ProfilePage />} />
       <Route path="/admin/categorias" element={<CategoriesAdminPage />} />
       <Route path="/admin/usuarios" element={<AdminUsersPage />} />
     </Routes>
+    {registrationOpen && <RegistrationModal onClose={() => navigate(backgroundLocation ? `${backgroundLocation.pathname}${backgroundLocation.search}${backgroundLocation.hash}` : '/', { replace: true })} />}
     <Footer />
   </>
 }

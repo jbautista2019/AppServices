@@ -6,6 +6,7 @@ import './styles/admin.css'
 import './styles/base.css'
 import './styles/connection.css'
 import './styles/home.css'
+import './styles/responsive.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

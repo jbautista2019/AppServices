@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../../utils/supabase'
 
 export default function AccountPage({ initialMode }) {
+  const location = useLocation()
+  const navigate = useNavigate()
   const [mode, setMode] = useState(initialMode)
   const [session, setSession] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
@@ -119,7 +121,7 @@ export default function AccountPage({ initialMode }) {
           <button type="button" onClick={handleLogout}>Cerrar sesión</button>
         </div> : <>
           <div className="account-tabs" role="tablist" aria-label="Acceso a la cuenta">
-            <button type="button" role="tab" aria-selected={mode === 'signup'} className={mode === 'signup' ? 'active' : ''} onClick={() => switchMode('signup')}>Crear cuenta</button>
+            <button type="button" role="tab" aria-selected="false" onClick={() => navigate('/registro', { state: { backgroundLocation: location } })}>Crear cuenta</button>
             <button type="button" role="tab" aria-selected={mode === 'login'} className={mode === 'login' ? 'active' : ''} onClick={() => switchMode('login')}>Iniciar sesión</button>
           </div>
           <form className="account-form" onSubmit={handleSubmit}>

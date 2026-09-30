@@ -1,0 +1,286 @@
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 320px;
+  overflow-x: clip;
+}
+
+img {
+  max-width: 100%;
+}
+
+button,
+input,
+select {
+  max-width: 100%;
+}
+
+@media (max-width: 900px) {
+  .admin-users-content {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+  }
+
+  .admin-users-form {
+    max-width: 620px;
+  }
+
+  .detail-grid {
+    gap: 36px;
+  }
+
+  .provider-page {
+    gap: 50px;
+  }
+}
+
+@media (max-width: 800px) {
+  .results-page,
+  .detail-page,
+  .provider-page {
+    padding: 48px 20px 72px;
+  }
+
+  .results-layout {
+    margin-top: 36px;
+  }
+
+  .filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 18px;
+  }
+
+  .filter-title {
+    grid-column: 1 / -1;
+  }
+
+  .provider-page {
+    min-height: 0;
+    padding-top: 54px;
+  }
+
+  .provider-steps {
+    margin-top: 48px;
+  }
+
+  .category-admin-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .category-admin-form input {
+    width: 100%;
+  }
+
+  .category-admin-form button {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .site-header {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .results-page,
+  .detail-page,
+  .provider-page {
+    padding: 38px 16px 56px;
+  }
+
+  .results-intro h1,
+  .provider-intro h1 {
+    font-size: clamp(32px, 9vw, 44px);
+    letter-spacing: 0;
+    line-height: 1.08;
+    overflow-wrap: anywhere;
+  }
+
+  .compact-search {
+    width: 100%;
+  }
+
+  .compact-search input {
+    width: 100%;
+  }
+
+  .results-layout {
+    margin-top: 30px;
+  }
+
+  .filters {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .filters .filter-title {
+    grid-column: auto;
+  }
+
+  .listing-top {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .service-card {
+    min-width: 0;
+  }
+
+  .service-card-body {
+    min-width: 0;
+    padding: 14px;
+  }
+
+  .service-card h2 {
+    overflow-wrap: anywhere;
+  }
+
+  .detail-grid {
+    display: block;
+  }
+
+  .detail-image {
+    height: clamp(220px, 65vw, 360px);
+  }
+
+  .detail-copy {
+    margin-top: 28px;
+  }
+
+  .detail-copy h1 {
+    font-size: clamp(32px, 9vw, 43px);
+    letter-spacing: 0;
+    line-height: 1.08;
+    overflow-wrap: anywhere;
+  }
+
+  .contact-box {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .contact-box .dark-button {
+    width: 100%;
+  }
+
+  .category-admin-heading,
+  .admin-users-heading {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .category-admin-heading h1,
+  .admin-users-heading h1 {
+    font-size: clamp(28px, 8vw, 34px);
+    letter-spacing: 0;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+  }
+
+  .category-admin-heading > button {
+    align-self: flex-start;
+  }
+
+  .category-admin-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .category-admin-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px 0;
+  }
+
+  .category-admin-identity {
+    width: 100%;
+  }
+
+  .category-admin-actions,
+  .admin-users-actions {
+    width: 100%;
+  }
+
+  .category-admin-actions button,
+  .admin-users-actions button {
+    flex: 1;
+  }
+
+  .admin-users-form-actions {
+    flex-wrap: wrap;
+  }
+
+  .admin-users-form-actions button {
+    flex: 1 1 140px;
+  }
+
+  .admin-users-row {
+    gap: 12px;
+  }
+
+  .account-page {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+    padding: 40px 18px 58px;
+  }
+
+  .account-intro h1 {
+    font-size: clamp(32px, 9vw, 40px);
+    letter-spacing: 0;
+    line-height: 1.08;
+  }
+
+  .account-panel {
+    min-width: 0;
+    padding: 18px;
+  }
+
+  .account-tabs button {
+    padding-right: 5px;
+    padding-left: 5px;
+    font-size: 12px;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 420px) {
+  .service-card {
+    flex-direction: column;
+  }
+
+  .service-card > img {
+    width: 100%;
+    height: 160px;
+  }
+
+  .service-card-body {
+    padding: 14px;
+  }
+
+  .price-row {
+    flex-direction: column;
+  }
+
+  .admin-users-page,
+  .category-admin-page {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .category-admin-toast {
+    right: 12px;
+    width: calc(100vw - 24px);
+  }
+
+  .account-form > button,
+  .account-session button {
+    width: 100%;
+  }
+}

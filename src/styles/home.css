@@ -622,6 +622,8 @@
 }
 
 .site-footer {
+  display: block;
+  padding: 0;
   color: #d9e6f8;
   background: #0d2850;
 }
@@ -722,6 +724,212 @@
   font-size: 10px;
 }
 
+.registration-backdrop {
+  position: fixed;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(8, 20, 39, .68);
+  backdrop-filter: blur(5px);
+  inset: 0;
+}
+
+.registration-modal {
+  position: relative;
+  width: min(100%, 448px);
+  max-height: min(720px, calc(100dvh - 36px));
+  padding: 27px 32px 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid rgba(223, 233, 247, .9);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 80px rgba(7, 21, 44, .3);
+  text-align: center;
+  animation: registration-modal-in .18s ease-out;
+}
+
+.registration-close {
+  position: absolute;
+  top: 13px;
+  right: 14px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #e1e8f1;
+  border-radius: 50%;
+  color: #586a82;
+  background: white;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.registration-mark {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  margin: 0 auto 13px;
+  border-radius: 11px;
+  color: white;
+  background: #12a7e8;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.registration-modal h1 {
+  color: #17233a;
+  font: 800 25px/1.2 'Manrope', sans-serif;
+  letter-spacing: 0;
+}
+
+.registration-subtitle {
+  margin: 7px 0 22px;
+  color: #69788d;
+  font-size: 13px;
+}
+
+.registration-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #dbe3ed;
+  border-radius: 9px;
+  color: #27364d;
+  background: white;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.registration-google:hover,
+.registration-close:hover {
+  background: #f6f9fd;
+}
+
+.registration-google > span {
+  color: #4285f4;
+  font: 800 19px 'Manrope', sans-serif;
+}
+
+.registration-google:disabled,
+.registration-submit:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.registration-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 19px 0;
+  color: #8b97a9;
+  font-size: 11px;
+}
+
+.registration-divider::before,
+.registration-divider::after {
+  flex: 1;
+  height: 1px;
+  background: #e3e9f1;
+  content: '';
+}
+
+.registration-form {
+  gap: 12px;
+  text-align: left;
+}
+
+.account-form .registration-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 46px;
+  padding: 0 12px;
+  border: 1px solid #dce4ee;
+  border-radius: 9px;
+  color: #8492a5;
+  background: white;
+}
+
+.registration-field:focus-within {
+  border-color: #80b6f5;
+  box-shadow: 0 0 0 3px rgba(8, 102, 223, .1);
+}
+
+.account-form .registration-field > span {
+  flex: 0 0 16px;
+  color: #8d9aae;
+  font-size: 16px;
+  text-align: center;
+}
+
+.account-form .registration-field input {
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  min-height: 42px;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: 12px;
+}
+
+.account-form .registration-field input::placeholder {
+  color: #9aa6b7;
+  opacity: 1;
+}
+
+.account-form .registration-field input:focus {
+  border: 0;
+}
+
+.registration-field > button {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  color: #8492a5;
+  background: transparent;
+  font-size: 17px;
+}
+
+.registration-form .registration-submit {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 8px;
+  color: white;
+  background: #0a91df;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.registration-login {
+  margin: 17px 0 0;
+  color: #6f7d90;
+  font-size: 11px;
+}
+
+.registration-login a {
+  color: var(--brand-blue);
+  font-weight: 700;
+}
+
+@keyframes registration-modal-in {
+  from { opacity: 0; transform: translateY(8px) scale(.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 @keyframes home-skeleton {
   to { background-position: -200% 0; }
 }
@@ -780,4 +988,22 @@
   .home-provider-benefits { grid-template-columns: 1fr; }
   .footer-links { grid-template-columns: 1fr 1fr; row-gap: 23px; }
   .footer-bottom { flex-direction: column; gap: 6px; }
+}
+
+@media (max-width: 500px) {
+  .registration-backdrop {
+    align-items: end;
+    padding: 8px;
+  }
+
+  .registration-modal {
+    width: 100%;
+    max-height: calc(100dvh - 16px);
+    padding: 24px 20px 20px;
+    border-radius: 15px 15px 10px 10px;
+  }
+
+  .registration-modal h1 {
+    font-size: 23px;
+  }
 }
