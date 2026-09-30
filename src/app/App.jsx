@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Route, Routes } from 'react-router-dom'
+import Footer from '../components/layout/Footer'
 import Header from '../components/layout/Header'
 import AccountPage from '../pages/account/AccountPage'
 import ProfilePage from '../pages/account/ProfilePage'
@@ -50,6 +51,6 @@ export default function App() {
       <Route path="/admin/categorias" element={<CategoriesAdminPage />} />
       <Route path="/admin/usuarios" element={<AdminUsersPage />} />
     </Routes>
-    <footer><span>oficios <i>cerca</i></span><small>Una forma más humana de encontrar ayuda.</small><span>© 2026</span></footer>
+    <Footer />
   </>
 }
