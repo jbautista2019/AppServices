@@ -17,8 +17,9 @@ export default function App() {
   const location = useLocation()
   const navigate = useNavigate()
   const registrationOpen = location.pathname === '/registro'
+  const loginOpen = location.pathname === '/cuenta'
   const backgroundLocation = location.state?.backgroundLocation
-  const pageLocation = registrationOpen
+  const pageLocation = registrationOpen || loginOpen
     ? backgroundLocation || { ...location, pathname: '/', search: '', hash: '' }
     : location
   const [services, setServices] = useState([])
@@ -53,11 +54,11 @@ export default function App() {
       <Route path="/buscar" element={<SearchPage services={services} categories={categories} loading={loading} loadError={loadError} />} />
       <Route path="/servicio/:id" element={<ServiceDetailPage services={services} loading={loading} loadError={loadError} />} />
       <Route path="/prestadores" element={<ProvidersPage />} />
-      <Route path="/cuenta" element={<AccountPage initialMode="login" />} />
       <Route path="/perfil" element={<ProfilePage />} />
       <Route path="/admin/categorias" element={<CategoriesAdminPage />} />
       <Route path="/admin/usuarios" element={<AdminUsersPage />} />
     </Routes>
+    {loginOpen && <AccountPage />}
     {registrationOpen && <RegistrationModal onClose={() => navigate(backgroundLocation ? `${backgroundLocation.pathname}${backgroundLocation.search}${backgroundLocation.hash}` : '/', { replace: true })} />}
     <Footer />
   </>
