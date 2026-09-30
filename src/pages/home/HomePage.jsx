@@ -1,13 +1,104 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+
+const CATEGORY_IMAGES = [
+  'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&w=700&q=82',
+  'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=700&q=82',
+  'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?auto=format&fit=crop&w=700&q=82',
+  'https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=700&q=82',
+  'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=700&q=82',
+  'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=700&q=82',
+]
+
+const LOCATIONS = ['Santiago', 'Providencia', 'Las Condes', 'Ñuñoa', 'Maipú', 'La Florida']
 
 export default function HomePage({ services, categories, loading }) {
   const [query, setQuery] = useState('')
+  const [location, setLocation] = useState('Santiago')
   const navigate = useNavigate()
-  const submit = (event) => { event.preventDefault(); navigate(`/buscar${query ? `?q=${encodeURIComponent(query)}` : ''}`) }
+  const carouselRef = useRef(null)
+  const featuredServices = [...services].sort((first, second) => Number(second.rating) - Number(first.rating)).slice(0, 8)
+
+  function submit(event) {
+    event.preventDefault()
+    const params = new URLSearchParams()
+    if (query.trim()) params.set('q', query.trim())
+    if (location) params.set('location', location)
+    navigate(`/buscar${params.size ? `?${params}` : ''}`)
+  }
+
+  function scrollProfessionals(direction) {
+    carouselRef.current?.scrollBy({ left: direction * 270, behavior: 'smooth' })
+  }
 
   return <>
-    <section className="hero"><div className="hero-copy"><p className="eyebrow">EL SERVICIO QUE NECESITAS, MÁS CERCA</p><h1>Encuentra a alguien que <em>lo haga bien.</em></h1><p className="hero-lead">Conecta con personas reales, recomendadas y disponibles para ayudarte en lo cotidiano.</p><form className="search-bar" onSubmit={submit}><span className="search-icon">⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="¿Qué servicio estás buscando?" /><button type="submit">Buscar <span>→</span></button></form><div className="search-hint"><span>⌖</span> Explora servicios disponibles cerca de ti</div></div><div className="hero-art"><div className="art-note">Personas reales.<br /><strong>Trabajos bien hechos.</strong></div><div className="art-circle"><span>✦</span></div></div></section>
-    <main className="home-content"><section className="section-heading"><div><p className="eyebrow">TODO LO QUE BUSCAS</p><h2>Explora por categoría</h2></div><Link to="/buscar" className="text-link">Ver todas <span>→</span></Link></section><div className="category-grid">{categories.map((category) => { const count = services.filter((service) => service.category === category.name).length; return <Link to={`/buscar?category=${encodeURIComponent(category.name)}`} className="category-tile" key={category.name}>{category.image_url ? <img className="category-icon" src={category.image_url} alt="" /> : <span className="category-icon">✦</span>}<strong>{category.name}</strong><small>{count.toLocaleString('es-CL')} {count === 1 ? 'servicio' : 'servicios'}</small><span className="tile-arrow">↗</span></Link> })}{!loading && !categories.length && <p>No hay categorías publicadas todavía.</p>}{loading && !categories.length && <p>Cargando categorías...</p>}</div><section className="feature-band"><div><p className="eyebrow">PARA QUIENES HACEN</p><h2>Tu oficio merece<br /><em>ser encontrado.</em></h2><p>Publica tus servicios gratis y llega a personas que necesitan exactamente lo que tú sabes hacer.</p><Link to="/prestadores" className="dark-button">Quiero ofrecer mis servicios <span>→</span></Link></div><div className="feature-quote"><span>“</span><p>Encontré un electricista para mi mamá en menos de diez minutos.</p><small>— Camila, La Reina</small></div></section></main>
+    <main className="home-page">
+      <section className="home-hero" id="inicio">
+        <div className="home-hero-inner">
+          <div className="home-search-column">
+            <p className="home-eyebrow">PROFESIONALES DE CONFIANZA, CERCA DE TI</p>
+            <h1>Encuentra al profesional que necesitas, <span>en un solo lugar.</span></h1>
+            <p className="home-lead">Plomeros, maestros de obra, carpinteros y especialistas listos para ayudarte.</p>
+            <form className="home-search" onSubmit={submit}>
+              <label className="home-search-query"><span aria-hidden="true">⌕</span><span className="home-search-input"><small>¿Qué servicio necesitas?</small><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ej: plomero, carpintero, gasfíter" /></span></label>
+              <label className="home-search-location"><span aria-hidden="true">⌖</span><span><small>Ubicación</small><select value={location} onChange={(event) => setLocation(event.target.value)}><option value="">Todas las zonas</option>{LOCATIONS.map((item) => <option key={item} value={item}>{item}</option>)}</select></span></label>
+              <button type="submit"><span aria-hidden="true">⌕</span> Buscar</button>
+            </form>
+          </div>
+          <section className="home-categories" id="categorias" aria-labelledby="categories-title">
+            <div className="home-section-heading home-category-heading"><h2 id="categories-title">Categorías de servicios</h2><Link to="/buscar">Ver todas <span aria-hidden="true">→</span></Link></div>
+            <div className="home-category-grid">
+              {categories.map((category, index) => {
+                const count = services.filter((service) => service.category === category.name).length
+                return <Link to={`/buscar?category=${encodeURIComponent(category.name)}`} className="home-category-card" key={category.name}>
+                  <img src={category.image_url || CATEGORY_IMAGES[index % CATEGORY_IMAGES.length]} alt="" loading={index > 2 ? 'lazy' : 'eager'} />
+                  <span className="home-category-count">{count}</span>
+                  <strong>{category.name}</strong>
+                </Link>
+              })}
+              {loading && !categories.length && Array.from({ length: 6 }, (_, index) => <div className="home-category-skeleton" key={index} />)}
+              {!loading && !categories.length && <p className="home-empty-categories">Aún no hay categorías publicadas.</p>}
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section className="home-professionals" aria-labelledby="professionals-title">
+        <div className="home-section-heading">
+          <h2 id="professionals-title"><span aria-hidden="true">✦</span> Profesionales más buscados</h2>
+          <div className="home-carousel-actions">
+            <Link to="/buscar">Ver todos los profesionales <span aria-hidden="true">→</span></Link>
+            <button type="button" aria-label="Desplazar profesionales a la izquierda" onClick={() => scrollProfessionals(-1)}>‹</button>
+            <button type="button" aria-label="Desplazar profesionales a la derecha" onClick={() => scrollProfessionals(1)}>›</button>
+          </div>
+        </div>
+        <div className="home-professional-list" ref={carouselRef}>
+          {featuredServices.map((service, index) => <article className="home-professional-card" key={service.id}>
+            <Link to={`/servicio/${service.id}`} className="home-professional-image">
+              <img src={service.image_url || CATEGORY_IMAGES[index % CATEGORY_IMAGES.length]} alt="" loading={index > 2 ? 'lazy' : 'eager'} />
+              {Number(service.rating) >= 4.8 && <span className="home-featured-badge">Destacado</span>}
+            </Link>
+            <div className="home-professional-body">
+              <Link to={`/servicio/${service.id}`} className="home-professional-name">{service.provider_name}</Link>
+              <span className="home-professional-category">{service.category}</span>
+              <span className="home-professional-rating"><b>★</b> {Number(service.rating).toFixed(1)} <span>·</span> {service.location}</span>
+              <p>{service.title.replace(/^\[PRUEBA\]\s*/i, '')}</p>
+              <Link className="home-contact-button" to={`/servicio/${service.id}`}>Ver servicio <span aria-hidden="true">→</span></Link>
+            </div>
+          </article>)}
+          {!loading && !featuredServices.length && <p className="home-empty-services">Todavía no hay profesionales publicados.</p>}
+          {loading && !featuredServices.length && <p className="home-empty-services">Cargando profesionales...</p>}
+        </div>
+      </section>
+
+      <section className="home-provider-banner" id="profesionales">
+        <div className="home-provider-copy">
+          <span className="home-provider-icon" aria-hidden="true">✣</span>
+          <div><h2>¿Eres un profesional?</h2><p>Publica tus servicios y llega a más clientes en tu zona.</p><Link to="/prestadores">Regístrate ahora <span aria-hidden="true">→</span></Link></div>
+        </div>
+        <ul className="home-provider-benefits"><li>Crea tu perfil en minutos</li><li>Recibe solicitudes de clientes</li><li>Destaca con el sello de verificado</li><li>Gestiona tus servicios fácilmente</li></ul>
+        <div className="home-provider-image" role="img" aria-label="Vista de Santiago y la cordillera" />
+      </section>
+    </main>
   </>
 }

@@ -1,5 +1,19 @@
 import { Link } from 'react-router-dom'
 
 export default function Header() {
-  return <header className="site-header"><Link to="/" className="brand"><span className="brand-mark">OC</span><span>oficios <i>cerca</i></span></Link><nav><Link to="/buscar">Explorar servicios</Link><Link to="/prestadores">Ofrece tus servicios</Link><Link to="/admin/categorias">Categorías</Link><Link to="/admin/usuarios">Usuarios</Link></nav><div className="header-actions"><button className="icon-button" aria-label="Notificaciones">♧</button><Link className="header-account-link" to="/cuenta">Entrar</Link><Link className="user-button" to="/registro">Crear cuenta <span>→</span></Link></div></header>
+  return <header className="site-header">
+    <div className="header-inner">
+      <Link to="/" className="brand"><span className="brand-mark" aria-hidden="true">⌂</span><span className="brand-copy">oficios <i>cerca</i><small>Servicios de confianza, cerca de ti</small></span></Link>
+      <nav aria-label="Navegación principal">
+        <Link className="header-nav-active" to="/">Inicio</Link>
+        <Link to="/buscar">Categorías</Link>
+        <Link to="/prestadores">Para profesionales</Link>
+      </nav>
+      <div className="header-actions">
+        <Link className="header-location" to="/buscar?location=Santiago"><span aria-hidden="true">⌖</span> Santiago <span aria-hidden="true">⌄</span></Link>
+        <Link className="header-signin" to="/cuenta">Iniciar sesión</Link>
+        <Link className="header-register" to="/registro">Regístrate</Link>
+      </div>
+    </div>
+  </header>
 }
