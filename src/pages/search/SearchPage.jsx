@@ -3,7 +3,7 @@ import ServiceCard from '../../components/services/ServiceCard'
 
 const SERVICES_PER_PAGE = 6
 
-export default function SearchPage({ services, categories, loading, loadError }) {
+export default function SearchPage({ services, categories, loading, loadError, embedded = false }) {
   const params = new URLSearchParams(window.location.search)
   const [query, setQuery] = useState(params.get('q') || '')
   const [category, setCategory] = useState(params.get('category') || 'Todas')
@@ -27,9 +27,10 @@ export default function SearchPage({ services, categories, loading, loadError })
   }, [query, category, location, minimumPrice, maximumPrice, services])
   const pageCount = Math.ceil(filtered.length / SERVICES_PER_PAGE)
   const visibleServices = filtered.slice((currentPage - 1) * SERVICES_PER_PAGE, currentPage * SERVICES_PER_PAGE)
+  const PageWrapper = embedded ? 'div' : 'main'
 
   return (
-    <main className="results-page">
+    <PageWrapper className={`results-page${embedded ? ' results-page--embedded' : ''}`}>
       <div className="results-intro">
         <p className="eyebrow">SERVICIOS CERCA DE TI</p>
         <h1>Encuentra lo que necesitas.</h1>
@@ -63,7 +64,6 @@ export default function SearchPage({ services, categories, loading, loadError })
               <input type="number" min="0" step="1000" aria-label="Precio máximo" placeholder="Hasta" value={maximumPrice} onChange={(event) => { setMaximumPrice(event.target.value); setCurrentPage(1) }} />
             </div>
           </label>
-          <label className="check-label"><input type="checkbox" /> Solo disponibles</label>
         </aside>
         <section className="listing">
           <div className="listing-top">
@@ -76,6 +76,6 @@ export default function SearchPage({ services, categories, loading, loadError })
           {pageCount > 1 && <nav className="pagination" aria-label="Paginación de servicios"><button type="button" aria-label="Página anterior" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1}>←</button>{Array.from({ length: pageCount }, (_, index) => index + 1).map((page) => <button type="button" key={page} className={currentPage === page ? 'active' : ''} aria-current={currentPage === page ? 'page' : undefined} onClick={() => setCurrentPage(page)}>{page}</button>)}<button type="button" aria-label="Página siguiente" onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))} disabled={currentPage === pageCount}>→</button></nav>}
         </section>
       </div>
-    </main>
+    </PageWrapper>
   )
 }

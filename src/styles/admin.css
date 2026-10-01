@@ -406,15 +406,216 @@
   font-weight: 700;
 }
 
-.account-page {
+.account-dashboard {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 440px);
-  gap: 72px;
-  align-items: center;
-  max-width: 1060px;
+  grid-template-columns: 256px minmax(0, 1fr);
   min-height: 68vh;
+  background: #f1f2f3;
+}
+
+.account-sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding: 34px 14px 24px;
+  background: #f8f8f8;
+}
+
+.account-sidebar-heading {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  padding: 16px 8px 28px;
+  color: #191d20;
+  font-size: 15px;
+}
+
+.account-sidebar-heading > span {
+  color: #70777c;
+  font-size: 20px;
+}
+
+.account-sidebar-nav {
+  display: grid;
+  gap: 4px;
+}
+
+.account-sidebar-nav a,
+.account-sidebar-nav button,
+.account-sidebar-logout {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  gap: 14px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: #565d62;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.account-sidebar-nav a > span {
+  width: 20px;
+  color: #737a7f;
+  font-size: 18px;
+  text-align: center;
+}
+
+.account-sidebar-nav a.active,
+.account-sidebar-nav button.active {
+  background: #e9eaeb;
+  color: #171b1e;
+  font-weight: 700;
+}
+
+.account-sidebar-logout {
+  margin-top: auto;
+  cursor: pointer;
+}
+
+.account-dashboard-content {
+  min-width: 0;
+  padding: 42px 30px 72px;
+}
+
+.account-dashboard-message {
+  max-width: 620px;
+  padding: 26px;
+  border: 1px solid #e1e2e3;
+  border-radius: 6px;
+  background: white;
+  color: var(--muted);
+}
+
+.account-user-summary {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  max-width: 1026px;
+  margin: 0 auto 48px;
+}
+
+.account-avatar {
+  display: grid;
+  width: 80px;
+  aspect-ratio: 1;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #e1e2e3;
+  border-radius: 50%;
+  background: white;
+  color: #25292c;
+  font-size: 30px;
+  font-weight: 400;
+}
+
+.account-user-summary h1 {
+  margin: 0 0 6px;
+  color: #171b1e;
+  font-size: 20px;
+}
+
+.account-user-summary p {
+  margin: 0;
+  color: #555b60;
+  font-size: 14px;
+}
+
+.account-module-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+  max-width: 1026px;
   margin: 0 auto;
-  padding: 72px 30px;
+}
+
+.account-module-card {
+  display: flex;
+  min-height: 150px;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 18px 16px;
+  border: 1px solid #e1e2e3;
+  border-radius: 7px;
+  background: white;
+  color: #191d20;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+}
+
+button.account-module-card {
+  cursor: pointer;
+}
+
+.account-module-icon {
+  display: grid;
+  min-width: 24px;
+  height: 26px;
+  place-items: center;
+  color: #272c30;
+  font-size: 20px;
+}
+
+.account-module-card h2 {
+  margin: 18px 0 3px;
+  color: #191d20;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.account-module-card > p {
+  margin: 0;
+  color: #70767b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.account-module-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 15px;
+  border: 0;
+  background: none;
+  color: #0866df;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.account-inline-form {
+  width: 100%;
+  margin-top: 14px;
+}
+
+.account-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.account-inline-actions button {
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid var(--ink);
+  border-radius: 3px;
+  background: var(--ink);
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.account-inline-actions button + button {
+  border-color: var(--line);
+  background: white;
+  color: var(--ink);
 }
 
 .account-intro h1 {
@@ -464,6 +665,241 @@
 .account-tabs button.active {
   border-bottom-color: var(--orange);
   color: var(--ink);
+}
+
+.account-profile-actions {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.account-profile-actions > .account-profile-link {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: white;
+  font-weight: 700;
+}
+
+.account-profile-actions > button {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  background: white;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.my-services-page {
+  max-width: 1160px;
+  min-height: 68vh;
+  margin: 0 auto;
+  padding: 56px 30px 88px;
+}
+
+.my-services-content {
+  min-width: 0;
+}
+
+.my-services-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.my-services-heading .back-link {
+  display: inline-block;
+  margin-bottom: 22px;
+}
+
+.my-services-heading .eyebrow {
+  margin-bottom: 8px;
+}
+
+.my-services-heading h1 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 38px;
+}
+
+.my-services-heading > span {
+  padding-bottom: 5px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.my-services-groups {
+  display: grid;
+  gap: 16px;
+}
+
+.my-services-group {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+}
+
+.my-services-group-heading {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  padding: 0 22px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.my-services-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.my-service-row {
+  display: grid;
+  grid-template-columns: 74px minmax(200px, 1.4fr) minmax(130px, .8fr) minmax(170px, 1fr);
+  align-items: center;
+  gap: 22px;
+  min-height: 142px;
+  padding: 22px 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.my-service-row:last-child {
+  border-bottom: 0;
+}
+
+.my-service-image-link {
+  display: grid;
+  width: 74px;
+  aspect-ratio: 1;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #f4f6f8;
+  color: var(--orange);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.my-service-image-link img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.my-service-description,
+.my-service-provider {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.my-service-description strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 16px;
+  text-overflow: ellipsis;
+}
+
+.my-service-description > span:not(.my-service-status),
+.my-service-description small,
+.my-service-provider span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.my-service-status {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.my-service-status.is-active {
+  color: #16864a;
+}
+
+.my-service-status.is-paused {
+  color: #9a5b00;
+}
+
+.my-service-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+
+.my-service-actions .my-service-action {
+  display: grid;
+  width: 34px;
+  min-height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: white;
+  color: #4b5966;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.my-service-actions .my-service-action svg {
+  width: 17px;
+  height: 17px;
+}
+
+.my-service-actions .my-service-action--view {
+  color: var(--brand-blue);
+}
+
+.my-service-actions .my-service-action--edit {
+  color: #485b70;
+}
+
+.my-service-actions .my-service-action--toggle {
+  color: #946100;
+}
+
+.my-service-actions .my-service-action--delete {
+  border-color: #edc9c3;
+  color: #a43c2a;
+}
+
+.my-service-actions .my-service-action:hover:not(:disabled) {
+  background: #f4f6f8;
+}
+
+.my-service-actions .my-service-action--delete:hover:not(:disabled) {
+  background: #fff5f3;
+}
+
+.my-service-actions .my-service-action:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.my-services-error {
+  border-color: #edc9c3;
+  color: #a43c2a;
+}
+
+.my-services-message {
+  padding: 28px;
+  border: 1px solid var(--line);
+  background: white;
+  color: var(--muted);
 }
 
 .account-form {

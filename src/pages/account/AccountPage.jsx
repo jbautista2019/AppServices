@@ -28,7 +28,9 @@ export default function AccountPage() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setSession(nextSession)
-      if (event === 'PASSWORD_RECOVERY') setRecoveryMode(true)
+      if (event === 'PASSWORD_RECOVERY' || new URLSearchParams(window.location.search).get('recovery') === 'true') {
+        setRecoveryMode(true)
+      }
       setAuthLoading(false)
     })
 
@@ -168,14 +170,7 @@ export default function AccountPage() {
   return <div className="login-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) navigate('/') }}>
     <section className="login-modal" role="dialog" aria-modal="true" aria-labelledby="login-title">
       <button className="login-close" type="button" aria-label="Cerrar inicio de sesión" onClick={() => navigate('/')}>×</button>
-      {session ? <div className="login-session">
-        <span className="login-mark" aria-hidden="true">☰</span>
-        <h1 id="login-title">Bienvenido de nuevo</h1>
-        <p>Ya tienes una sesión activa.</p>
-        <strong>{session.user.email}</strong>
-        <Link className="login-profile-link" to="/perfil">Ver mi perfil</Link>
-        <button className="login-submit" type="button" onClick={handleLogout}>Cerrar sesión</button>
-      </div> : recoveryMode ? <div className="login-recovery">
+      {recoveryMode ? <div className="login-recovery">
         <span className="login-mark" aria-hidden="true">☰</span>
         <h1 id="login-title">Crear nueva contraseña</h1>
         <p className="login-subtitle">Elige una contraseña segura para tu cuenta.</p>
@@ -185,6 +180,13 @@ export default function AccountPage() {
         </form>
         <button type="button" className="login-recovery-back" onClick={() => { setRecoveryMode(false); setNotice(''); setNewPassword('') }}>Volver al inicio de sesión</button>
         {notice && <p className={`account-notice account-notice--${noticeType}`} role={noticeType === 'error' ? 'alert' : 'status'}>{notice}</p>}
+      </div> : session ? <div className="login-session">
+        <span className="login-mark" aria-hidden="true">☰</span>
+        <h1 id="login-title">Bienvenido de nuevo</h1>
+        <p>Ya tienes una sesión activa.</p>
+        <strong>{session.user.email}</strong>
+        <Link className="login-profile-link" to="/perfil">Ver mi perfil</Link>
+        <button className="login-submit" type="button" onClick={handleLogout}>Cerrar sesión</button>
       </div> : <>
         <span className="login-mark" aria-hidden="true">☰</span>
         <h1 id="login-title">Bienvenido a DaloYa</h1>

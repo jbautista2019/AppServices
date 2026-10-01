@@ -36,6 +36,37 @@ select {
 }
 
 @media (max-width: 800px) {
+  .account-dashboard {
+    grid-template-columns: 210px minmax(0, 1fr);
+  }
+
+  .account-dashboard-content {
+    padding: 34px 22px 56px;
+  }
+
+  .account-module-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .my-services-page {
+    padding: 48px 20px 72px;
+  }
+
+  .my-service-row {
+    grid-template-columns: 64px minmax(0, 1fr) 150px;
+    gap: 16px;
+    padding: 18px;
+  }
+
+  .my-service-image-link {
+    width: 64px;
+  }
+
+  .my-service-provider {
+    display: none;
+  }
+
   .results-page,
   .detail-page,
   .provider-page {
@@ -80,6 +111,47 @@ select {
 }
 
 @media (max-width: 600px) {
+  .my-services-page {
+    padding: 38px 16px 56px;
+  }
+
+  .my-services-heading {
+    align-items: start;
+    margin-bottom: 22px;
+  }
+
+  .my-services-heading h1 {
+    font-size: 32px;
+  }
+
+  .my-services-heading > span {
+    padding-top: 52px;
+    white-space: nowrap;
+  }
+
+  .my-services-group-heading {
+    padding: 0 16px;
+  }
+
+  .my-service-row {
+    grid-template-columns: 56px minmax(0, 1fr);
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .my-service-image-link {
+    width: 56px;
+  }
+
+  .my-service-actions {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+
+  .my-service-description strong {
+    white-space: normal;
+  }
+
   .site-header {
     padding-right: 12px;
     padding-left: 12px;
@@ -222,27 +294,70 @@ select {
     gap: 12px;
   }
 
-  .account-page {
+  .account-dashboard {
     grid-template-columns: minmax(0, 1fr);
-    gap: 28px;
-    padding: 40px 18px 58px;
   }
 
-  .account-intro h1 {
-    font-size: clamp(32px, 9vw, 40px);
-    letter-spacing: 0;
-    line-height: 1.08;
+  .account-sidebar {
+    min-height: 0;
+    padding: 10px 16px;
   }
 
-  .account-panel {
-    min-width: 0;
-    padding: 18px;
+  .account-sidebar-heading {
+    padding: 6px 2px 10px;
   }
 
-  .account-tabs button {
-    padding-right: 5px;
-    padding-left: 5px;
+  .account-sidebar-nav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .account-sidebar-nav a,
+  .account-sidebar-nav button {
+    min-height: 42px;
+    justify-content: center;
+    gap: 7px;
+    padding: 0 5px;
     font-size: 12px;
+  }
+
+  .account-sidebar-nav a > span,
+  .account-sidebar-nav button > span {
+    width: auto;
+    font-size: 16px;
+  }
+
+  .account-sidebar-logout {
+    min-height: 38px;
+    align-self: flex-end;
+  }
+
+  .account-dashboard-content {
+    padding: 32px 18px 54px;
+  }
+
+  .account-user-summary {
+    gap: 16px;
+    margin-bottom: 30px;
+  }
+
+  .account-avatar {
+    width: 66px;
+    font-size: 25px;
+  }
+
+  .account-module-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .account-module-card {
+    min-height: 150px;
+    padding: 16px 13px;
+  }
+
+  .account-module-card h2 {
+    overflow-wrap: anywhere;
   }
 
   .pagination {
@@ -251,6 +366,21 @@ select {
 }
 
 @media (max-width: 420px) {
+  .account-module-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .account-sidebar-nav a,
+  .account-sidebar-nav button {
+    flex-direction: column;
+    gap: 2px;
+    font-size: 11px;
+  }
+
+  .account-user-summary h1 {
+    overflow-wrap: anywhere;
+  }
+
   .service-card {
     flex-direction: column;
   }

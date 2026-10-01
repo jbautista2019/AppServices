@@ -53,8 +53,9 @@ export default function App() {
       <Route path="/" element={<HomePage services={services} categories={categories} loading={loading} />} />
       <Route path="/buscar" element={<SearchPage services={services} categories={categories} loading={loading} loadError={loadError} />} />
       <Route path="/servicio/:id" element={<ServiceDetailPage services={services} loading={loading} loadError={loadError} />} />
+      <Route path="/servicio/:id/editar" element={<ServiceDetailPage services={services} loading={loading} loadError={loadError} />} />
       <Route path="/prestadores" element={<ProvidersPage />} />
-      <Route path="/perfil" element={<ProfilePage />} />
+      <Route path="/perfil" element={<ProfilePage services={services} categories={categories} loading={loading} loadError={loadError} />} />
       <Route path="/admin/categorias" element={<CategoriesAdminPage />} />
       <Route path="/admin/usuarios" element={<AdminUsersPage />} />
     </Routes>

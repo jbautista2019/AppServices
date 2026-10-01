@@ -18,6 +18,58 @@ export async function getPublishedServices() {
   return { data, error }
 }
 
+export async function getUserServices(userId) {
+  if (!supabase || !userId) return { data: [], error: null }
+
+  const { data, error } = await supabase
+    .from('services')
+    .select('id, title, provider_name, category, location, rating, starting_price, image_url, description, is_active, created_at')
+    .eq('provider_id', userId)
+    .order('created_at', { ascending: false })
+
+  return { data, error }
+}
+
+export async function getServiceById(serviceId) {
+  if (!supabase || !serviceId) return { data: null, error: null }
+
+  const { data, error } = await supabase
+    .from('services')
+    .select('*')
+    .eq('id', serviceId)
+    .single()
+
+  return { data, error }
+}
+
+export async function updateService(serviceId, userId, updates) {
+  if (!supabase || !serviceId || !userId) return { data: null, error: new Error('No se pudo validar el propietario del servicio.') }
+
+  const { data, error } = await supabase
+    .from('services')
+    .update(updates)
+    .eq('id', serviceId)
+    .eq('provider_id', userId)
+    .select('id')
+    .maybeSingle()
+
+  return { data, error: error || (!data ? new Error('No se encontró el servicio o no tienes permiso para modificarlo.') : null) }
+}
+
+export async function deleteService(serviceId, userId) {
+  if (!supabase || !serviceId || !userId) return { data: null, error: new Error('No se pudo validar el propietario del servicio.') }
+
+  const { data, error } = await supabase
+    .from('services')
+    .delete()
+    .eq('id', serviceId)
+    .eq('provider_id', userId)
+    .select('id')
+    .maybeSingle()
+
+  return { data, error: error || (!data ? new Error('No se encontró el servicio o no tienes permiso para eliminarlo.') : null) }
+}
+
 export async function getCategories() {
   if (!supabase) return { data: null, error: new Error('Supabase no está configurado.') }
 
