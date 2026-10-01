@@ -111,7 +111,8 @@
 }
 
 .header-signin,
-.header-register {
+.header-register,
+.header-profile {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -133,8 +134,20 @@
   background: var(--brand-blue);
 }
 
+.header-profile {
+  gap: 8px;
+  color: white;
+  background: var(--brand-blue);
+}
+
+.header-profile span:first-child {
+  font-size: 15px;
+  line-height: 1;
+}
+
 .header-signin:hover,
 .header-register:hover,
+.header-profile:hover,
 .home-search button:hover,
 .home-contact-button:hover,
 .home-provider-copy a:hover {
@@ -1030,6 +1043,7 @@
 }
 
 .login-form { display: grid; gap: 12px; text-align: left; }
+.login-recovery { display: grid; gap: 12px; text-align: left; }
 .login-field { gap: 10px; padding: 0 12px; color: #8d9aae; }
 .login-field:focus-within { border-color: #80b6f5; box-shadow: 0 0 0 3px rgba(8, 102, 223, .1); }
 .login-field > span { flex: 0 0 16px; font-size: 16px; text-align: center; }
@@ -1045,6 +1059,8 @@
 .login-submit { width: 100%; min-height: 48px; margin-top: 1px; border: 0; border-radius: 10px; color: white; background: #0a9fdf; font-size: 14px; font-weight: 800; }
 .login-submit:hover { background: #078dcc; }
 .login-register { margin: 20px 0 0; color: #68768a; font-size: 12px; }
+.login-recovery-back { margin: 0; padding: 0; border: 0; background: transparent; color: #009be9; font-size: 12px; font-weight: 700; cursor: pointer; }
+.login-recovery-back:hover { text-decoration: underline; }
 .login-register a, .login-profile-link { color: #009be9; font-weight: 700; }
 .login-session strong { display: block; margin-bottom: 18px; color: #27364d; font-size: 13px; }
 .login-profile-link { display: block; margin-bottom: 18px; font-size: 12px; }
