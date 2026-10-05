@@ -97,7 +97,10 @@ export default function MyServicesPage({ userId }) {
       <div>
         <h1>Mis servicios</h1>
       </div>
-      <span>{services.length} {services.length === 1 ? 'servicio' : 'servicios'}</span>
+      <div className="my-services-heading-actions">
+        <span>{services.length} {services.length === 1 ? 'servicio' : 'servicios'}</span>
+        <Link className="my-services-create" to="/servicio/nuevo"><span aria-hidden="true">+</span> Crear servicio</Link>
+      </div>
     </div>
 
     {servicesLoading ? <p className="my-services-message">Cargando tus servicios...</p> : loadError ? <p className="my-services-message" role="alert">{loadError}</p> : <>

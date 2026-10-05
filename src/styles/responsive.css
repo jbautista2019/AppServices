@@ -116,7 +116,7 @@ select {
   }
 
   .my-services-heading {
-    align-items: start;
+    align-items: flex-start;
     margin-bottom: 22px;
   }
 
@@ -124,9 +124,30 @@ select {
     font-size: 32px;
   }
 
-  .my-services-heading > span {
-    padding-top: 52px;
-    white-space: nowrap;
+  .my-services-heading-actions {
+    align-items: flex-end;
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .my-services-create {
+    min-height: 38px;
+    padding: 0 10px;
+    font-size: 12px;
+  }
+
+  .create-service-panel {
+    padding: 20px 16px;
+  }
+
+  .create-service-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .create-service-actions > a {
+    padding: 8px 0;
+    text-align: center;
   }
 
   .my-services-group-heading {

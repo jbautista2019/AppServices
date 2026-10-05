@@ -5,6 +5,8 @@ import { supabase } from '../../utils/supabase'
 export default function AccountPage() {
   const navigate = useNavigate()
   const location = useLocation()
+  const backgroundLocation = location.state?.backgroundLocation
+  const closePath = backgroundLocation ? `${backgroundLocation.pathname}${backgroundLocation.search || ''}${backgroundLocation.hash || ''}` : '/'
   const [session, setSession] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [email, setEmail] = useState('')
@@ -19,6 +21,12 @@ export default function AccountPage() {
   useEffect(() => {
     setRecoveryMode(new URLSearchParams(location.search).get('recovery') === 'true')
   }, [location.search])
+
+  useEffect(() => {
+    if (!authLoading && session && !recoveryMode) {
+      navigate(closePath, { replace: true })
+    }
+  }, [authLoading, closePath, navigate, recoveryMode, session])
 
   useEffect(() => {
     if (!supabase) {
@@ -42,7 +50,7 @@ export default function AccountPage() {
     document.body.style.overflow = 'hidden'
 
     function handleKeyDown(event) {
-      if (event.key === 'Escape') navigate('/')
+      if (event.key === 'Escape') navigate(closePath)
     }
 
     window.addEventListener('keydown', handleKeyDown)
@@ -50,30 +58,34 @@ export default function AccountPage() {
       document.body.style.overflow = previousOverflow
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [navigate])
+  }, [closePath, navigate])
 
   async function handleSubmit(event) {
     event.preventDefault()
     if (!supabase) return
 
-    if (!supabase) {
-      setNoticeType('error')
-      setNotice('Configura Supabase para iniciar sesión.')
-      return
-    }
-
     setBusy(true)
     setNotice('')
+    let timeoutId
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
+      const timeout = new Promise((_, reject) => {
+        timeoutId = window.setTimeout(() => reject(new Error('LOGIN_TIMEOUT')), 15000)
+      })
+      const { error } = await Promise.race([
+        supabase.auth.signInWithPassword({ email: email.trim(), password }),
+        timeout,
+      ])
       if (error) throw error
       setNoticeType('success')
       setNotice('Sesión iniciada correctamente.')
       setPassword('')
-    } catch {
+    } catch (error) {
       setNoticeType('error')
-      setNotice('No se pudo iniciar sesión. Revisa tus credenciales y confirma tu correo.')
+      setNotice(error.message === 'LOGIN_TIMEOUT'
+        ? 'El inicio de sesión está tardando demasiado. Verifica tu conexión e inténtalo de nuevo.'
+        : 'No se pudo iniciar sesión. Revisa tus credenciales y confirma tu correo.')
     } finally {
+      window.clearTimeout(timeoutId)
       setBusy(false)
     }
   }
@@ -167,9 +179,9 @@ export default function AccountPage() {
 
   if (authLoading) return null
 
-  return <div className="login-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) navigate('/') }}>
+  return <div className="login-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) navigate(closePath) }}>
     <section className="login-modal" role="dialog" aria-modal="true" aria-labelledby="login-title">
-      <button className="login-close" type="button" aria-label="Cerrar inicio de sesión" onClick={() => navigate('/')}>×</button>
+      <button className="login-close" type="button" aria-label="Cerrar inicio de sesión" onClick={() => navigate(closePath)}>×</button>
       {recoveryMode ? <div className="login-recovery">
         <span className="login-mark" aria-hidden="true">☰</span>
         <h1 id="login-title">Crear nueva contraseña</h1>

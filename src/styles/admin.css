@@ -726,10 +726,145 @@ button.account-module-card {
   font-size: 38px;
 }
 
-.my-services-heading > span {
-  padding-bottom: 5px;
+.my-services-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.my-services-heading-actions > span {
   color: var(--muted);
   font-size: 14px;
+  white-space: nowrap;
+}
+
+.my-services-create {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 15px;
+  border: 1px solid var(--brand-blue);
+  border-radius: 4px;
+  background: var(--brand-blue);
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.my-services-create:hover {
+  background: var(--brand-blue-dark);
+}
+
+.my-services-create > span {
+  font-size: 19px;
+  line-height: 1;
+}
+
+.create-service-panel {
+  max-width: 720px;
+  margin: 24px auto 0;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+}
+
+.create-service-heading {
+  margin-bottom: 24px;
+}
+
+.create-service-heading .eyebrow {
+  margin-bottom: 9px;
+}
+
+.create-service-heading h1 {
+  margin: 0;
+  font-size: 30px;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.create-service-heading > p:last-child {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.create-service-form input,
+.create-service-form select,
+.create-service-form textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
+.create-service-form textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.create-service-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.create-service-actions > a {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.create-service-actions > button {
+  min-height: 42px;
+  margin: 0;
+  padding: 0 17px;
+  border: 1px solid var(--brand-blue);
+  border-radius: 4px;
+  background: var(--brand-blue);
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.create-service-actions > button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.create-service-error,
+.create-service-notice {
+  color: #a43c2a;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.create-service-notice {
+  padding: 20px;
+  border: 1px solid var(--line);
+  background: white;
+  color: var(--muted);
+}
+
+.create-service-notice p {
+  margin: 0 0 12px;
+}
+
+.create-service-notice a {
+  color: var(--brand-blue);
+  font-weight: 700;
 }
 
 .my-services-groups {

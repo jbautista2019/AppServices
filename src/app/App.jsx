@@ -8,9 +8,11 @@ import RegistrationModal from '../pages/account/RegistrationModal'
 import AdminUsersPage from '../pages/admin/AdminUsersPage'
 import CategoriesAdminPage from '../pages/admin/CategoriesAdminPage'
 import HomePage from '../pages/home/HomePage'
+import MessagesPage from '../pages/messages/MessagesPage'
 import ProvidersPage from '../pages/providers/ProvidersPage'
 import SearchPage from '../pages/search/SearchPage'
 import ServiceDetailPage from '../pages/services/ServiceDetailPage'
+import CreateServicePage from '../pages/services/CreateServicePage'
 import { getCategories, getPublishedServices, isSupabaseConfigured } from '../utils/supabase'
 
 export default function App() {
@@ -52,10 +54,12 @@ export default function App() {
     <Routes location={pageLocation}>
       <Route path="/" element={<HomePage services={services} categories={categories} loading={loading} />} />
       <Route path="/buscar" element={<SearchPage services={services} categories={categories} loading={loading} loadError={loadError} />} />
+      <Route path="/servicio/nuevo" element={<CreateServicePage categories={categories} />} />
       <Route path="/servicio/:id" element={<ServiceDetailPage services={services} loading={loading} loadError={loadError} />} />
       <Route path="/servicio/:id/editar" element={<ServiceDetailPage services={services} loading={loading} loadError={loadError} />} />
       <Route path="/prestadores" element={<ProvidersPage />} />
       <Route path="/perfil" element={<ProfilePage services={services} categories={categories} loading={loading} loadError={loadError} />} />
+      <Route path="/mensajes" element={<MessagesPage />} />
       <Route path="/admin/categorias" element={<CategoriesAdminPage />} />
       <Route path="/admin/usuarios" element={<AdminUsersPage />} />
     </Routes>

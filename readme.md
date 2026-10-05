@@ -4,7 +4,7 @@ MVP en React + Vite conectado opcionalmente con Supabase.
 
 ### Configurar Supabase
 
-1. En Supabase, abre **SQL Editor**, crea una consulta nueva y ejecuta `supabase/schema.sql`. Puedes volver a ejecutarlo para aplicar la tabla de categorías, su columna `image_url` y migrar los nombres que ya existen en servicios.
+1. En Supabase, abre **SQL Editor**, crea una consulta nueva y ejecuta `supabase/schema.sql`. Puedes volver a ejecutarlo para aplicar la tabla de categorías, su columna `image_url`, migrar los nombres existentes y crear las tablas/políticas del chat.
 2. Ejecuta también `supabase/seed.sql` desde el **SQL Editor** para cargar categorías y publicaciones de prueba. Puedes volver a ejecutarlo sin duplicar esas filas.
 3. Si aún no tienes `.env.local`, copia `.env.example` como `.env.local`.
 4. En Supabase ve a **Project Settings > API** y completa:

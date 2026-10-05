@@ -134,3 +134,103 @@ create policy "Admins manage categories"
 
 grant select on public.categories to anon, authenticated;
 grant insert, update, delete on public.categories to authenticated;
+
+create table if not exists public.conversations (
+  id uuid primary key default gen_random_uuid(),
+  service_id bigint not null references public.services(id) on delete cascade,
+  client_id uuid not null references auth.users(id) on delete cascade,
+  provider_id uuid not null references auth.users(id) on delete cascade,
+  service_title text not null,
+  provider_name text not null,
+  client_name text not null,
+  created_at timestamptz not null default now(),
+  constraint conversations_distinct_members check (client_id <> provider_id),
+  constraint conversations_service_client_key unique (service_id, client_id)
+);
+
+create index if not exists conversations_client_created_idx
+  on public.conversations (client_id, created_at desc);
+create index if not exists conversations_provider_created_idx
+  on public.conversations (provider_id, created_at desc);
+
+alter table public.conversations enable row level security;
+drop policy if exists "Participants read conversations" on public.conversations;
+create policy "Participants read conversations"
+  on public.conversations for select
+  to authenticated
+  using (auth.uid() = client_id or auth.uid() = provider_id);
+
+drop policy if exists "Clients start conversations for published services" on public.conversations;
+create policy "Clients start conversations for published services"
+  on public.conversations for insert
+  to authenticated
+  with check (
+    auth.uid() = client_id
+    and client_id <> provider_id
+    and exists (
+      select 1
+      from public.services
+      where id = service_id
+        and provider_id = conversations.provider_id
+        and title = conversations.service_title
+        and provider_name = conversations.provider_name
+        and is_active = true
+    )
+  );
+
+grant select, insert on public.conversations to authenticated;
+
+create table if not exists public.messages (
+  id uuid primary key default gen_random_uuid(),
+  conversation_id uuid not null references public.conversations(id) on delete cascade,
+  sender_id uuid not null references auth.users(id) on delete cascade,
+  content text not null check (length(btrim(content)) between 1 and 4000),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists messages_conversation_created_idx
+  on public.messages (conversation_id, created_at);
+
+alter table public.messages enable row level security;
+drop policy if exists "Participants read messages" on public.messages;
+create policy "Participants read messages"
+  on public.messages for select
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.conversations
+      where id = conversation_id
+        and (auth.uid() = client_id or auth.uid() = provider_id)
+    )
+  );
+
+drop policy if exists "Participants send messages" on public.messages;
+create policy "Participants send messages"
+  on public.messages for insert
+  to authenticated
+  with check (
+    auth.uid() = sender_id
+    and exists (
+      select 1
+      from public.conversations
+      where id = conversation_id
+        and (auth.uid() = client_id or auth.uid() = provider_id)
+    )
+  );
+
+grant select, insert on public.messages to authenticated;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'messages'
+  ) then
+    alter publication supabase_realtime add table public.messages;
+  end if;
+end
+$$;

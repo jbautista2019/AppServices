@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { getServiceById, isSupabaseConfigured, supabase, updateService } from '../../utils/supabase'
+import { getOrCreateConversation, getServiceById, isSupabaseConfigured, supabase, updateService } from '../../utils/supabase'
 
 export default function ServiceDetailPage({ services, loading, loadError }) {
   const { id } = useParams()
@@ -67,6 +67,47 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
   }, [id, isEditing])
 
   const isOwner = Boolean(session?.user?.id && detailService && String(detailService.provider_id) === String(session.user.id))
+  const ownsPublishedService = Boolean(session?.user?.id && service?.provider_id && String(service.provider_id) === String(session.user.id))
+
+  async function handleContact() {
+    if (!session) {
+      navigate('/cuenta', { state: { backgroundLocation: location } })
+      return
+    }
+
+    if (!service?.provider_id) {
+      setNoticeType('error')
+      setNotice('Esta publicación no está vinculada a una cuenta profesional.')
+      return
+    }
+
+    if (ownsPublishedService) {
+      setNoticeType('error')
+      setNotice('No puedes iniciar una conversación con tu propia publicación.')
+      return
+    }
+
+    setSaving(true)
+    setNotice('')
+    try {
+      const clientName = session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Cliente'
+      const { data, error } = await getOrCreateConversation({
+        service_id: service.id,
+        client_id: session.user.id,
+        provider_id: service.provider_id,
+        service_title: service.title,
+        provider_name: service.provider_name,
+        client_name: clientName,
+      })
+      if (error || !data) throw error || new Error('No se pudo iniciar la conversación.')
+      navigate(`/mensajes?conversation=${encodeURIComponent(data.id)}`)
+    } catch {
+      setNoticeType('error')
+      setNotice('No se pudo iniciar el chat. Verifica que el módulo de mensajería esté habilitado en Supabase.')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -136,5 +177,5 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
 
   if (!service) return <main className="detail-page"><Link to="/buscar" className="back-link">← Volver a resultados</Link><p>{loadError || 'Esta publicación no está disponible.'}</p></main>
 
-  return <main className="detail-page"><Link to="/buscar" className="back-link">← Volver a resultados</Link><div className="detail-grid"><div>{service.image_url && <img className="detail-image" src={service.image_url} alt={service.title} />}</div><section className="detail-copy"><span className="category-label">{service.category}</span><h1>{service.title}</h1><p className="detail-provider">{service.provider_name} <span className="verified">✓</span></p><div className="detail-rating"><strong>★ {Number(service.rating).toFixed(1)}</strong><span>⌖ {service.location}</span></div><hr /><h3>Sobre este servicio</h3><p className="description">{service.description}</p><div className="contact-box"><div><strong>¿Te interesa este servicio?</strong><small>Responde normalmente en menos de una hora.</small></div><button className="dark-button">Contactar <span>→</span></button></div></section></div></main>
+  return <main className="detail-page"><Link to="/buscar" className="back-link">← Volver a resultados</Link><div className="detail-grid"><div>{service.image_url && <img className="detail-image" src={service.image_url} alt={service.title} />}</div><section className="detail-copy"><span className="category-label">{service.category}</span><h1>{service.title}</h1><p className="detail-provider">{service.provider_name} <span className="verified">✓</span></p><div className="detail-rating"><strong>★ {Number(service.rating).toFixed(1)}</strong><span>⌖ {service.location}</span></div><hr /><h3>Sobre este servicio</h3><p className="description">{service.description}</p><div className="contact-box"><div><strong>¿Te interesa este servicio?</strong><small>Responde normalmente en menos de una hora.</small>{notice && <small className="contact-notice" role="alert">{notice}</small>}</div><button className="dark-button" type="button" disabled={saving || ownsPublishedService} onClick={handleContact}>{saving ? 'Abriendo chat...' : ownsPublishedService ? 'Tu publicación' : 'Contactar'} <span aria-hidden="true">→</span></button></div></section></div></main>
 }
