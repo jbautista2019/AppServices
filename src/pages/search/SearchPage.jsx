@@ -3,6 +3,11 @@ import ServiceCard from '../../components/services/ServiceCard'
 
 const SERVICES_PER_PAGE = 6
 
+function parsePriceFilter(value) {
+  const digits = String(value).replace(/\D/g, '')
+  return digits ? Number(digits) : null
+}
+
 export default function SearchPage({ services, categories, loading, loadError, embedded = false }) {
   const params = new URLSearchParams(window.location.search)
   const [query, setQuery] = useState(params.get('q') || '')
@@ -19,8 +24,10 @@ export default function SearchPage({ services, categories, loading, loadError, e
       const matchesCategory = category === 'Todas' || service.category === category
       const matchesLocation = !locationQuery || (service.location || '').toLocaleLowerCase('es-CL').includes(locationQuery)
       const price = Number(service.starting_price)
-      const matchesMinimumPrice = minimumPrice === '' || price >= Number(minimumPrice)
-      const matchesMaximumPrice = maximumPrice === '' || price <= Number(maximumPrice)
+      const minimum = parsePriceFilter(minimumPrice)
+      const maximum = parsePriceFilter(maximumPrice)
+      const matchesMinimumPrice = minimum === null || (Number.isFinite(price) && price >= minimum)
+      const matchesMaximumPrice = maximum === null || (Number.isFinite(price) && price <= maximum)
 
       return matchesQuery && matchesCategory && matchesLocation && matchesMinimumPrice && matchesMaximumPrice
     })
@@ -60,8 +67,8 @@ export default function SearchPage({ services, categories, loading, loadError, e
           <label>
             Precio referencial
             <div className="price-row">
-              <input type="number" min="0" step="1000" aria-label="Precio mínimo" placeholder="Desde" value={minimumPrice} onChange={(event) => { setMinimumPrice(event.target.value); setCurrentPage(1) }} />
-              <input type="number" min="0" step="1000" aria-label="Precio máximo" placeholder="Hasta" value={maximumPrice} onChange={(event) => { setMaximumPrice(event.target.value); setCurrentPage(1) }} />
+              <input type="text" inputMode="decimal" aria-label="Precio mínimo" placeholder="Desde" value={minimumPrice} onChange={(event) => { setMinimumPrice(event.target.value); setCurrentPage(1) }} />
+              <input type="text" inputMode="decimal" aria-label="Precio máximo" placeholder="Hasta" value={maximumPrice} onChange={(event) => { setMaximumPrice(event.target.value); setCurrentPage(1) }} />
             </div>
           </label>
         </aside>
