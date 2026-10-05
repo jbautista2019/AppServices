@@ -369,23 +369,6 @@
   overflow-wrap: anywhere;
 }
 
-.home-category-count {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: grid;
-  place-items: center;
-  min-width: 24px;
-  height: 24px;
-  padding: 0 6px;
-  border: 1px solid rgba(255, 255, 255, .45);
-  border-radius: 20px;
-  color: white;
-  background: rgba(8, 102, 223, .88);
-  font-size: 10px;
-  font-weight: 700;
-}
-
 .home-category-skeleton {
   aspect-ratio: 1.48;
   border-radius: 8px;
@@ -1104,7 +1087,6 @@
   .home-category-grid { gap: 8px; }
   .home-category-card { aspect-ratio: 1.48; }
   .home-category-card strong { padding: 0 7px 7px; font-size: 10px; }
-  .home-category-count { top: 6px; right: 6px; min-width: 21px; height: 21px; font-size: 9px; }
   .home-professionals { padding: 22px 18px 20px; }
   .home-section-heading h2 { font-size: 15px; }
   .home-carousel-actions > a { display: none; }

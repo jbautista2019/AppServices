@@ -49,10 +49,8 @@ export default function HomePage({ services, categories, loading }) {
             <div className="home-section-heading home-category-heading"><h2 id="categories-title">Categorías de servicios</h2><Link to="/buscar">Ver todas <span aria-hidden="true">→</span></Link></div>
             <div className="home-category-grid">
               {categories.map((category, index) => {
-                const count = services.filter((service) => service.category === category.name).length
                 return <Link to={`/buscar?category=${encodeURIComponent(category.name)}`} className="home-category-card" key={category.name}>
                   <img src={category.image_url || CATEGORY_IMAGES[index % CATEGORY_IMAGES.length]} alt="" loading={index > 2 ? 'lazy' : 'eager'} />
-                  <span className="home-category-count">{count}</span>
                   <strong>{category.name}</strong>
                 </Link>
               })}

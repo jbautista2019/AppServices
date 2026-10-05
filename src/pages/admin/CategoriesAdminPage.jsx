@@ -186,12 +186,6 @@ export default function CategoriesAdminPage() {
     setBusy(false)
   }
 
-  async function handleLogout() {
-    if (!supabase) return
-    await supabase.auth.signOut()
-    setNotice('')
-  }
-
   return (
     <main className="category-admin-page">
       <header className="category-admin-heading">
@@ -200,7 +194,6 @@ export default function CategoriesAdminPage() {
           <h1>Administrar categorías</h1>
           <p>Gestiona las categorías disponibles para las publicaciones.</p>
         </div>
-        {session && <button type="button" onClick={handleLogout}>Cerrar sesión</button>}
       </header>
 
       {!isSupabaseConfigured && <p className="category-admin-notice">Configura Supabase antes de administrar categorías.</p>}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { isSupabaseConfigured, supabase } from '../../utils/supabase'
+import { isCategoryAdmin, isSupabaseConfigured, supabase } from '../../utils/supabase'
 import MyServicesPage from './MyServicesPage'
 import SearchPage from '../search/SearchPage'
 
@@ -12,6 +12,8 @@ export default function ProfilePage({ services, categories, loading, loadError }
   const location = useLocation()
   const [session, setSession] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
+  const [canManageCategories, setCanManageCategories] = useState(false)
+  const [categoryAdminChecked, setCategoryAdminChecked] = useState(false)
   const [fullName, setFullName] = useState('')
   const [activeSection, setActiveSection] = useState(location.state?.profileSection === 'services' ? 'services' : 'profile')
   const [editingProfile, setEditingProfile] = useState(false)
@@ -36,6 +38,34 @@ export default function ProfilePage({ services, categories, loading, loadError }
   useEffect(() => {
     setFullName(getFullName(session?.user))
   }, [session?.user?.id, session?.user?.user_metadata?.full_name, session?.user?.user_metadata?.name])
+
+  useEffect(() => {
+    const userId = session?.user?.id
+    if (!userId) {
+      setCanManageCategories(false)
+      setCategoryAdminChecked(true)
+      return
+    }
+
+    let cancelled = false
+    setCanManageCategories(false)
+    setCategoryAdminChecked(false)
+    isCategoryAdmin().then(({ data, error }) => {
+      if (cancelled) return
+      setCanManageCategories(!error && data === true)
+      setCategoryAdminChecked(true)
+    }).catch(() => {
+      if (cancelled) return
+      setCanManageCategories(false)
+      setCategoryAdminChecked(true)
+    })
+
+    return () => { cancelled = true }
+  }, [session?.user?.id])
+
+  useEffect(() => {
+    if (canManageCategories && activeSection !== 'profile') setActiveSection('profile')
+  }, [activeSection, canManageCategories])
 
   useEffect(() => {
     if (!supabase || !session?.user?.id) return
@@ -100,8 +130,10 @@ export default function ProfilePage({ services, categories, loading, loadError }
         <div className="account-sidebar-heading"><span aria-hidden="true">☰</span><strong>Mi cuenta</strong></div>
         <nav className="account-sidebar-nav" aria-label="Navegación de cuenta">
           <button className={activeSection === 'profile' ? 'active' : ''} type="button" onClick={() => setActiveSection('profile')}><span aria-hidden="true">◉</span> Mi perfil</button>
-          <button className={activeSection === 'services' ? 'active' : ''} type="button" onClick={() => setActiveSection('services')}><span aria-hidden="true">▤</span> Mis servicios</button>
-          <button className={activeSection === 'explore' ? 'active' : ''} type="button" onClick={() => setActiveSection('explore')}><span aria-hidden="true">⌕</span> Explorar servicios</button>
+          {categoryAdminChecked && canManageCategories ? <Link to="/admin/categorias"><span aria-hidden="true">⚙</span> Administrar categorías</Link> : categoryAdminChecked && <>
+            <button className={activeSection === 'services' ? 'active' : ''} type="button" onClick={() => setActiveSection('services')}><span aria-hidden="true">▤</span> Mis servicios</button>
+            <button className={activeSection === 'explore' ? 'active' : ''} type="button" onClick={() => setActiveSection('explore')}><span aria-hidden="true">⌕</span> Explorar servicios</button>
+          </>}
         </nav>
         {session && <button className="account-sidebar-logout" type="button" onClick={handleLogout}>Cerrar sesión</button>}
       </aside>
@@ -132,19 +164,26 @@ export default function ProfilePage({ services, categories, loading, loadError }
               </form>}
             </article>
 
-            <button className="account-module-card" type="button" onClick={() => setActiveSection('services')}>
+            {categoryAdminChecked && canManageCategories && <Link className="account-module-card" to="/admin/categorias">
+              <span className="account-module-icon" aria-hidden="true">⚙</span>
+              <h2>Administrar categorías</h2>
+              <p>Crea, edita y elimina categorías.</p>
+              <span className="account-module-action">Gestionar categorías <span>→</span></span>
+            </Link>}
+
+            {categoryAdminChecked && !canManageCategories && <button className="account-module-card" type="button" onClick={() => setActiveSection('services')}>
               <span className="account-module-icon" aria-hidden="true">▤</span>
               <h2>Mis servicios</h2>
               <p>Administra y edita tus publicaciones.</p>
               <span className="account-module-action">Ver servicios <span>→</span></span>
-            </button>
+            </button>}
 
-            <button className="account-module-card" type="button" onClick={() => setActiveSection('explore')}>
+            {categoryAdminChecked && !canManageCategories && <button className="account-module-card" type="button" onClick={() => setActiveSection('explore')}>
               <span className="account-module-icon" aria-hidden="true">⌕</span>
               <h2>Explorar servicios</h2>
               <p>Encuentra oficios y servicios cerca de ti.</p>
               <span className="account-module-action">Ir a buscar <span>→</span></span>
-            </button>
+            </button>}
           </div> : activeSection === 'services' ? <MyServicesPage userId={session.user.id} /> : <SearchPage embedded services={services} categories={categories} loading={loading} loadError={loadError} />}
         </>}
       </section>
