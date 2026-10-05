@@ -40,6 +40,14 @@ export default function ProfilePage({ services, categories, loading, loadError }
   }, [session?.user?.id, session?.user?.user_metadata?.full_name, session?.user?.user_metadata?.name])
 
   useEffect(() => {
+    const requestedSection = location.state?.profileSection
+    if (['profile', 'services', 'explore'].includes(requestedSection)) {
+      setActiveSection(requestedSection)
+      setEditingProfile(requestedSection === 'profile' && location.state?.profileEditing === true)
+    }
+  }, [location.key, location.state?.profileSection, location.state?.profileEditing])
+
+  useEffect(() => {
     const userId = session?.user?.id
     if (!userId) {
       setCanManageCategories(false)

@@ -407,18 +407,13 @@
 }
 
 .account-dashboard {
-  display: grid;
-  grid-template-columns: 256px minmax(0, 1fr);
+  display: block;
   min-height: 68vh;
   background: #f1f2f3;
 }
 
 .account-sidebar {
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
-  padding: 34px 14px 24px;
-  background: #f8f8f8;
+  display: none;
 }
 
 .account-sidebar-heading {

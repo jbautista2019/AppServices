@@ -136,18 +136,133 @@
 
 .header-profile {
   gap: 8px;
-  color: white;
-  background: var(--brand-blue);
+  padding: 4px 7px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--ink);
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
 }
 
-.header-profile span:first-child {
-  font-size: 15px;
+.header-profile:hover {
+  background: rgba(16, 43, 85, .06);
+  filter: none;
+}
+
+.header-profile-wrap {
+  position: relative;
+}
+
+.header-profile-wrap::after {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
+  height: 10px;
+  content: '';
+}
+
+.header-profile-avatar {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--brand-blue);
+  color: white;
+  font-size: 10px;
   line-height: 1;
+}
+
+.header-profile-chevron {
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 1px;
+  transform: rotate(45deg);
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+}
+
+.header-profile-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 40;
+  width: min(300px, calc(100vw - 24px));
+  overflow: hidden;
+  border: 1px solid #e2e7ee;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 12px 32px rgba(16, 43, 85, .16);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.header-profile-identity {
+  display: grid;
+  gap: 5px;
+  padding: 17px 18px;
+  border-bottom: 1px solid #e8edf2;
+}
+
+.header-profile-identity strong {
+  overflow-wrap: anywhere;
+  color: #182334;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.header-profile-identity span {
+  overflow-wrap: anywhere;
+  color: #778294;
+  font-size: 12px;
+}
+
+.site-header .header-profile-links {
+  display: grid;
+  align-items: stretch;
+  align-self: auto;
+  gap: 2px;
+  padding: 7px;
+}
+
+.site-header .header-profile-links a,
+.header-profile-footer button {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  height: auto;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #354154;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  white-space: normal;
+}
+
+.site-header .header-profile-links a:hover,
+.header-profile-footer button:hover {
+  background: #f2f6fb;
+  color: var(--brand-blue);
+}
+
+.header-profile-footer {
+  padding: 7px;
+  border-top: 1px solid #e8edf2;
+}
+
+.header-profile-footer button {
+  width: 100%;
+  cursor: pointer;
 }
 
 .header-signin:hover,
 .header-register:hover,
-.header-profile:hover,
 .home-search button:hover,
 .home-contact-button:hover,
 .home-provider-copy a:hover {
