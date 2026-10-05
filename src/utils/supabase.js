@@ -122,6 +122,11 @@ export async function manageUsers(payload) {
 export async function getOrCreateConversation(conversation) {
   if (!supabase) return { data: null, error: new Error('Supabase no está configurado.') }
 
+  const { error: restoreError } = await supabase.rpc('restore_conversation_for_current_user', {
+    p_service_id: conversation.service_id,
+  })
+  if (restoreError) return { data: null, error: restoreError }
+
   const { data: existing, error: lookupError } = await supabase
     .from('conversations')
     .select('*')
@@ -157,12 +162,24 @@ export async function getUserConversations() {
     .order('created_at', { ascending: false })
 }
 
-export async function getConversationMessages(conversationId) {
+export async function deleteConversation(conversationId) {
+  if (!supabase || !conversationId) return { error: new Error('No se pudo identificar la conversación.') }
+
+  const { data, error } = await supabase.rpc('hide_conversation_for_current_user', {
+    p_conversation_id: conversationId,
+  })
+  if (error && (error.code === 'PGRST202' || error.message?.includes('schema cache'))) {
+    return { data: null, error: new Error('Actualiza Supabase ejecutando el schema.sql más reciente y vuelve a intentar.') }
+  }
+  return { data, error: error || (data ? null : new Error('No tienes permiso para ocultar esta conversación.')) }
+}
+
+export async function getConversationMessages(conversationId, { includeReadStatus = true } = {}) {
   if (!supabase || !conversationId) return { data: [], error: new Error('No se pudo identificar la conversación.') }
 
   return supabase
     .from('messages')
-    .select('id, conversation_id, sender_id, content, created_at')
+    .select(`id, conversation_id, sender_id, content, created_at${includeReadStatus ? ', read_at' : ''}`)
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: true })
 }
@@ -175,4 +192,27 @@ export async function sendConversationMessage(conversationId, senderId, content)
     sender_id: senderId,
     content,
   })
+}
+
+export async function getUnreadMessageNotifications(userId) {
+  if (!supabase || !userId) return { data: [], error: null }
+
+  return supabase
+    .from('messages')
+    .select('id, conversation_id, sender_id, content, created_at, conversations!inner(service_title, client_id, provider_id, client_name, provider_name)')
+    .neq('sender_id', userId)
+    .is('read_at', null)
+    .order('created_at', { ascending: false })
+    .limit(50)
+}
+
+export async function markConversationMessagesRead(conversationId, userId) {
+  if (!supabase || !conversationId || !userId) return { error: new Error('No se pudo validar la conversación.') }
+
+  return supabase
+    .from('messages')
+    .update({ read_at: new Date().toISOString() })
+    .eq('conversation_id', conversationId)
+    .neq('sender_id', userId)
+    .is('read_at', null)
 }

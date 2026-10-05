@@ -153,12 +153,101 @@ create index if not exists conversations_client_created_idx
 create index if not exists conversations_provider_created_idx
   on public.conversations (provider_id, created_at desc);
 
+create table if not exists public.conversation_hidden (
+  conversation_id uuid not null references public.conversations(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  hidden_at timestamptz not null default now(),
+  primary key (conversation_id, user_id)
+);
+
+alter table public.conversation_hidden enable row level security;
+revoke all on public.conversation_hidden from public, anon, authenticated;
+
+create or replace function public.is_conversation_hidden(p_conversation_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.conversation_hidden
+    where conversation_id = p_conversation_id
+      and user_id = (select auth.uid())
+  );
+$$;
+
+revoke all on function public.is_conversation_hidden(uuid) from public;
+grant execute on function public.is_conversation_hidden(uuid) to authenticated;
+
+create or replace function public.hide_conversation_for_current_user(p_conversation_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  caller_id uuid := (select auth.uid());
+begin
+  if caller_id is null or not exists (
+    select 1
+    from public.conversations
+    where id = p_conversation_id
+      and (client_id = caller_id or provider_id = caller_id)
+  ) then
+    return false;
+  end if;
+
+  insert into public.conversation_hidden (conversation_id, user_id)
+  values (p_conversation_id, caller_id)
+  on conflict (conversation_id, user_id) do nothing;
+
+  return true;
+end
+$$;
+
+revoke all on function public.hide_conversation_for_current_user(uuid) from public;
+grant execute on function public.hide_conversation_for_current_user(uuid) to authenticated;
+
+create or replace function public.restore_conversation_for_current_user(p_service_id bigint)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  conversation_uuid uuid;
+begin
+  select id into conversation_uuid
+  from public.conversations
+  where service_id = p_service_id
+    and client_id = (select auth.uid());
+
+  if conversation_uuid is null then
+    return false;
+  end if;
+
+  delete from public.conversation_hidden
+  where conversation_id = conversation_uuid
+    and user_id = (select auth.uid());
+
+  return true;
+end
+$$;
+
+revoke all on function public.restore_conversation_for_current_user(bigint) from public;
+grant execute on function public.restore_conversation_for_current_user(bigint) to authenticated;
+
 alter table public.conversations enable row level security;
 drop policy if exists "Participants read conversations" on public.conversations;
 create policy "Participants read conversations"
   on public.conversations for select
   to authenticated
-  using (auth.uid() = client_id or auth.uid() = provider_id);
+  using (
+    (auth.uid() = client_id or auth.uid() = provider_id)
+    and not public.is_conversation_hidden(id)
+  );
 
 drop policy if exists "Clients start conversations for published services" on public.conversations;
 create policy "Clients start conversations for published services"
@@ -178,6 +267,8 @@ create policy "Clients start conversations for published services"
     )
   );
 
+drop policy if exists "Participants delete conversations" on public.conversations;
+revoke delete on public.conversations from authenticated;
 grant select, insert on public.conversations to authenticated;
 
 create table if not exists public.messages (
@@ -185,8 +276,12 @@ create table if not exists public.messages (
   conversation_id uuid not null references public.conversations(id) on delete cascade,
   sender_id uuid not null references auth.users(id) on delete cascade,
   content text not null check (length(btrim(content)) between 1 and 4000),
+  read_at timestamptz,
   created_at timestamptz not null default now()
 );
+
+alter table public.messages
+  add column if not exists read_at timestamptz;
 
 create index if not exists messages_conversation_created_idx
   on public.messages (conversation_id, created_at);
@@ -221,6 +316,31 @@ create policy "Participants send messages"
 
 grant select, insert on public.messages to authenticated;
 
+drop policy if exists "Recipients mark messages as read" on public.messages;
+create policy "Recipients mark messages as read"
+  on public.messages for update
+  to authenticated
+  using (
+    auth.uid() <> sender_id
+    and exists (
+      select 1
+      from public.conversations
+      where id = conversation_id
+        and (auth.uid() = client_id or auth.uid() = provider_id)
+    )
+  )
+  with check (
+    auth.uid() <> sender_id
+    and exists (
+      select 1
+      from public.conversations
+      where id = conversation_id
+        and (auth.uid() = client_id or auth.uid() = provider_id)
+    )
+  );
+
+grant update (read_at) on public.messages to authenticated;
+
 do $$
 begin
   if not exists (
@@ -234,3 +354,5 @@ begin
   end if;
 end
 $$;
+
+notify pgrst, 'reload schema';
