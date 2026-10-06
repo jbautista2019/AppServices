@@ -1,10 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
+import { trackedFetch } from './loading'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
-export const supabase = isSupabaseConfigured ? createClient(supabaseUrl, supabaseAnonKey) : null
+export const supabase = isSupabaseConfigured ? createClient(supabaseUrl, supabaseAnonKey, { global: { fetch: trackedFetch } }) : null
 
 export async function getPublishedServices() {
   if (!supabase) return { data: null, error: null }
@@ -169,29 +170,42 @@ export async function deleteConversation(conversationId) {
     p_conversation_id: conversationId,
   })
   if (error && (error.code === 'PGRST202' || error.message?.includes('schema cache'))) {
-    return { data: null, error: new Error('Actualiza Supabase ejecutando el schema.sql más reciente y vuelve a intentar.') }
+    return { data: null, error: new Error('Actualiza Supabase ejecutando el schema.sql y supabase/chat-upgrade.sql, y vuelve a intentar.') }
   }
   return { data, error: error || (data ? null : new Error('No tienes permiso para ocultar esta conversación.')) }
 }
 
-export async function getConversationMessages(conversationId, { includeReadStatus = true } = {}) {
+const MESSAGE_COLUMNS = 'id, conversation_id, sender_id, content, created_at, read_at'
+
+export async function getConversationMessages(conversationId) {
   if (!supabase || !conversationId) return { data: [], error: new Error('No se pudo identificar la conversación.') }
 
   return supabase
     .from('messages')
-    .select(`id, conversation_id, sender_id, content, created_at${includeReadStatus ? ', read_at' : ''}`)
+    .select(MESSAGE_COLUMNS)
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: true })
 }
 
-export async function sendConversationMessage(conversationId, senderId, content) {
-  if (!supabase || !conversationId || !senderId) return { error: new Error('Inicia sesión para enviar mensajes.') }
+// Mensajes recientes de todas las conversaciones del usuario (RLS limita a las suyas); sirve para vista previa y no leídos.
+export async function getInboxMessages(limit = 500) {
+  if (!supabase) return { data: [], error: new Error('Supabase no está configurado.') }
 
-  return supabase.from('messages').insert({
-    conversation_id: conversationId,
-    sender_id: senderId,
-    content,
-  })
+  return supabase
+    .from('messages')
+    .select(MESSAGE_COLUMNS)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+}
+
+export async function sendConversationMessage(conversationId, senderId, content) {
+  if (!supabase || !conversationId || !senderId) return { data: null, error: new Error('Inicia sesión para enviar mensajes.') }
+
+  return supabase
+    .from('messages')
+    .insert({ conversation_id: conversationId, sender_id: senderId, content })
+    .select(MESSAGE_COLUMNS)
+    .single()
 }
 
 export async function getUnreadMessageNotifications(userId) {
@@ -215,4 +229,32 @@ export async function markConversationMessagesRead(conversationId, userId) {
     .eq('conversation_id', conversationId)
     .neq('sender_id', userId)
     .is('read_at', null)
+}
+
+export const SERVICE_IMAGE_BUCKET = 'service-images'
+export const SERVICE_IMAGE_MAX_BYTES = 5 * 1024 * 1024
+export const SERVICE_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+
+export function validateServiceImage(file) {
+  if (!SERVICE_IMAGE_TYPES.includes(file.type)) return 'La imagen debe ser JPG, PNG o WebP.'
+  if (file.size > SERVICE_IMAGE_MAX_BYTES) return 'La imagen no puede superar los 5 MB.'
+  return ''
+}
+
+// Sube la imagen a Storage dentro de la carpeta del usuario y devuelve su URL pública.
+export async function uploadServiceImage(file, userId) {
+  if (!supabase || !userId) return { url: null, error: new Error('Inicia sesión para subir imágenes.') }
+
+  const validationError = validateServiceImage(file)
+  if (validationError) return { url: null, error: new Error(validationError) }
+
+  const extension = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[file.type]
+  const path = `${userId}/${crypto.randomUUID()}.${extension}`
+  const { error } = await supabase.storage.from(SERVICE_IMAGE_BUCKET).upload(path, file, { contentType: file.type, cacheControl: '31536000' })
+  if (error) {
+    const missingBucket = /bucket not found/i.test(error.message || '')
+    return { url: null, error: new Error(missingBucket ? 'Falta crear el almacenamiento de imágenes. Ejecuta supabase/storage-service-images.sql en Supabase.' : `No se pudo subir la imagen: ${error.message}`) }
+  }
+
+  return { url: supabase.storage.from(SERVICE_IMAGE_BUCKET).getPublicUrl(path).data.publicUrl, error: null }
 }

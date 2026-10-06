@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import Footer from '../components/layout/Footer'
 import Header from '../components/layout/Header'
+import LoadingOverlay from '../components/layout/LoadingOverlay'
 import AccountPage from '../pages/account/AccountPage'
 import ProfilePage from '../pages/account/ProfilePage'
 import RegistrationModal from '../pages/account/RegistrationModal'
@@ -66,5 +67,6 @@ export default function App() {
     {loginOpen && <AccountPage />}
     {registrationOpen && <RegistrationModal onClose={() => navigate(backgroundLocation ? `${backgroundLocation.pathname}${backgroundLocation.search}${backgroundLocation.hash}` : '/', { replace: true })} />}
     <Footer />
+    <LoadingOverlay />
   </>
 }

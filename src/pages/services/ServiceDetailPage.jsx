@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { getOrCreateConversation, getServiceById, isSupabaseConfigured, supabase, updateService } from '../../utils/supabase'
+import ImagePicker from '../../components/services/ImagePicker'
+import { getOrCreateConversation, getServiceById, isSupabaseConfigured, supabase, updateService, uploadServiceImage } from '../../utils/supabase'
 
 export default function ServiceDetailPage({ services, loading, loadError }) {
   const { id } = useParams()
@@ -22,6 +23,8 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
     description: '',
     image_url: '',
   })
+  const [imageFile, setImageFile] = useState(null)
+  const [imageRemoved, setImageRemoved] = useState(false)
 
   const service = isEditing ? detailService : services.find((item) => String(item.id) === id)
 
@@ -101,9 +104,9 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
       })
       if (error || !data) throw error || new Error('No se pudo iniciar la conversación.')
       navigate(`/mensajes?conversation=${encodeURIComponent(data.id)}`)
-    } catch {
+    } catch (error) {
       setNoticeType('error')
-      setNotice('No se pudo iniciar el chat. Verifica que el módulo de mensajería esté habilitado en Supabase.')
+      setNotice(error.message || 'No se pudo iniciar el chat. Verifica que el módulo de mensajería esté habilitado en Supabase.')
     } finally {
       setSaving(false)
     }
@@ -117,13 +120,20 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
     setNotice('')
 
     try {
+      let imageUrl = imageRemoved ? null : formData.image_url.trim() || null
+      if (imageFile) {
+        const { url, error: uploadError } = await uploadServiceImage(imageFile, session.user.id)
+        if (uploadError) throw uploadError
+        imageUrl = url
+      }
+
       const payload = {
         title: formData.title.trim(),
         category: formData.category.trim(),
         location: formData.location.trim(),
         starting_price: Number(formData.starting_price) || 0,
         description: formData.description.trim(),
-        image_url: formData.image_url.trim() || null,
+        image_url: imageUrl,
       }
 
       if (!payload.title || !payload.category || !payload.location) {
@@ -166,7 +176,7 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
           <label>Categoría<input required value={formData.category} onChange={(event) => setFormData((current) => ({ ...current, category: event.target.value }))} /></label>
           <label>Ubicación<input required value={formData.location} onChange={(event) => setFormData((current) => ({ ...current, location: event.target.value }))} /></label>
           <label>Precio base<input type="number" min="0" step="1000" value={formData.starting_price} onChange={(event) => setFormData((current) => ({ ...current, starting_price: event.target.value }))} /></label>
-          <label>URL de imagen<input value={formData.image_url} onChange={(event) => setFormData((current) => ({ ...current, image_url: event.target.value }))} /></label>
+          <ImagePicker currentUrl={formData.image_url} file={imageFile} removed={imageRemoved} onChange={(file) => { setImageFile(file); if (file) setImageRemoved(false) }} onRemoveCurrent={() => setImageRemoved(true)} />
           <label>Descripción<textarea rows="6" required value={formData.description} onChange={(event) => setFormData((current) => ({ ...current, description: event.target.value }))} /></label>
           {notice && <p className={`account-notice account-notice--${noticeType}`} role={noticeType === 'error' ? 'alert' : 'status'}>{notice}</p>}
           <button type="submit" disabled={saving}>{saving ? 'Guardando...' : 'Guardar cambios'}</button>

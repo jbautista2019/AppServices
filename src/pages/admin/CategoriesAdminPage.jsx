@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { createCategory, deleteCategory, getCategories, isCategoryAdmin, isSupabaseConfigured, supabase, updateCategory } from '../../utils/supabase'
+import ImagePicker from '../../components/services/ImagePicker'
+import { createCategory, deleteCategory, getCategories, isCategoryAdmin, isSupabaseConfigured, supabase, updateCategory, uploadServiceImage } from '../../utils/supabase'
 
 export default function CategoriesAdminPage() {
   const [session, setSession] = useState(null)
@@ -14,6 +15,8 @@ export default function CategoriesAdminPage() {
   const [draftName, setDraftName] = useState('')
   const [draftImageUrl, setDraftImageUrl] = useState('')
   const [editingName, setEditingName] = useState(null)
+  const [imageFile, setImageFile] = useState(null)
+  const [imageRemoved, setImageRemoved] = useState(false)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
   const [noticeType, setNoticeType] = useState('info')
@@ -140,7 +143,17 @@ export default function CategoriesAdminPage() {
 
     setBusy(true)
     setNotice('')
-    const imageUrl = draftImageUrl.trim()
+    let imageUrl = imageRemoved ? '' : draftImageUrl.trim()
+    if (imageFile) {
+      const { url, error: uploadError } = await uploadServiceImage(imageFile, session.user.id)
+      if (uploadError) {
+        setNoticeType('error')
+        setNotice(uploadError.message)
+        setBusy(false)
+        return
+      }
+      imageUrl = url
+    }
     const { error } = editingName
       ? await updateCategory(editingName, name, imageUrl)
       : await createCategory(name, imageUrl)
@@ -163,6 +176,8 @@ export default function CategoriesAdminPage() {
     }
     setDraftName('')
     setDraftImageUrl('')
+    setImageFile(null)
+    setImageRemoved(false)
     setEditingName(null)
     setBusy(false)
   }
@@ -215,15 +230,14 @@ export default function CategoriesAdminPage() {
         <h2>{editingName ? 'Editar categoría' : 'Nueva categoría'}</h2>
         <form className="category-admin-form" onSubmit={handleSaveCategory}>
           <input aria-label="Nombre de categoría" maxLength={60} required value={draftName} onChange={(event) => setDraftName(event.target.value)} placeholder="Nombre de categoría" />
-          <input aria-label="URL de imagen" type="url" value={draftImageUrl} onChange={(event) => setDraftImageUrl(event.target.value)} placeholder="https://... imagen de categoría" />
           <button type="submit" disabled={busy}>{editingName ? 'Guardar cambios' : 'Crear categoría'}</button>
-          {editingName && <button type="button" onClick={() => { setEditingName(null); setDraftName(''); setDraftImageUrl('') }}>Cancelar</button>}
+          {editingName && <button type="button" onClick={() => { setEditingName(null); setDraftName(''); setDraftImageUrl(''); setImageFile(null); setImageRemoved(false) }}>Cancelar</button>}
         </form>
-        {draftImageUrl && <img className="category-admin-image-preview" src={draftImageUrl} alt="Vista previa de la categoría" />}
+        <ImagePicker currentUrl={draftImageUrl} file={imageFile} removed={imageRemoved} onChange={(file) => { setImageFile(file); if (file) setImageRemoved(false) }} onRemoveCurrent={() => setImageRemoved(true)} />
         {categories.length ? <ul className="category-admin-list">{categories.map((category) => <li className="category-admin-row" key={category.name}>
           <div className="category-admin-identity">{category.image_url ? <img className="category-admin-thumbnail" src={category.image_url} alt="" /> : <span className="category-admin-thumbnail category-admin-thumbnail--empty" aria-hidden="true">✦</span>}<strong>{category.name}</strong></div>
           <div className="category-admin-actions">
-            <button type="button" disabled={busy} onClick={() => { setEditingName(category.name); setDraftName(category.name); setDraftImageUrl(category.image_url || '') }}>Editar</button>
+            <button type="button" disabled={busy} onClick={() => { setEditingName(category.name); setDraftName(category.name); setDraftImageUrl(category.image_url || ''); setImageFile(null); setImageRemoved(false) }}>Editar</button>
             <button type="button" disabled={busy} onClick={() => handleDeleteCategory(category.name)}>Eliminar</button>
           </div>
         </li>)}</ul> : <p className="category-admin-notice">Todavía no hay categorías.</p>}

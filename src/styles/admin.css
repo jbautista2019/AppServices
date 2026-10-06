@@ -1256,3 +1256,55 @@ button.account-module-card {
     padding: 20px;
   }
 }
+
+.image-picker {
+  display: grid;
+  gap: 10px;
+}
+
+.image-picker-label {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.image-picker-preview {
+  width: 100%;
+  max-height: 240px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.image-picker-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.image-picker-actions button {
+  min-height: 38px;
+  padding: 8px 14px;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  background: white;
+  color: var(--ink);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.image-picker-actions .image-picker-remove {
+  border-color: #e3b4ad;
+  color: #a43c2a;
+}
+
+.image-picker-actions small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.image-picker-error {
+  margin: 0;
+  color: #a43c2a;
+  font-size: 12px;
+}

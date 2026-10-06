@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { createService, isSupabaseConfigured, supabase } from '../../utils/supabase'
+import ImagePicker from '../../components/services/ImagePicker'
+import { createService, isSupabaseConfigured, supabase, uploadServiceImage } from '../../utils/supabase'
 
 export default function CreateServicePage({ categories }) {
   const location = useLocation()
@@ -14,9 +15,9 @@ export default function CreateServicePage({ categories }) {
     category: '',
     location: '',
     startingPrice: '',
-    imageUrl: '',
     description: '',
   })
+  const [imageFile, setImageFile] = useState(null)
 
   useEffect(() => {
     if (!supabase) {
@@ -57,6 +58,17 @@ export default function CreateServicePage({ categories }) {
       || session.user.email?.split('@')[0]
       || 'Profesional'
 
+    let imageUrl = null
+    if (imageFile) {
+      const { url, error: uploadError } = await uploadServiceImage(imageFile, session.user.id)
+      if (uploadError) {
+        setError(uploadError.message)
+        setSaving(false)
+        return
+      }
+      imageUrl = url
+    }
+
     const { error: saveError } = await createService({
       provider_id: session.user.id,
       provider_name: providerName,
@@ -65,7 +77,7 @@ export default function CreateServicePage({ categories }) {
       location: form.location.trim(),
       rating: 0,
       starting_price: Math.max(0, Math.round(Number(form.startingPrice) || 0)),
-      image_url: form.imageUrl.trim() || null,
+      image_url: imageUrl,
       description: form.description.trim(),
       is_active: true,
     })
@@ -101,7 +113,7 @@ export default function CreateServicePage({ categories }) {
         </select></label>
         <label>Ubicación<input required maxLength={120} value={form.location} onChange={(event) => updateField('location', event.target.value)} placeholder="Comuna o ciudad" /></label>
         <label>Precio referencial<input type="number" min="0" step="1000" value={form.startingPrice} onChange={(event) => updateField('startingPrice', event.target.value)} placeholder="Desde" /></label>
-        <label>Imagen (URL, opcional)<input type="url" value={form.imageUrl} onChange={(event) => updateField('imageUrl', event.target.value)} placeholder="https://..." /></label>
+        <ImagePicker file={imageFile} onChange={setImageFile} />
         <label>Descripción<textarea required maxLength={4000} rows={5} value={form.description} onChange={(event) => updateField('description', event.target.value)} placeholder="Describe el servicio, experiencia y qué incluye." /></label>
         {error && <p className="create-service-error" role="alert">{error}</p>}
         <div className="create-service-actions">
