@@ -51,9 +51,9 @@ export default function HomePage({ services, categories, loading }) {
           <div className="home-search-column">
             <p className="home-eyebrow">PROFESIONALES DE CONFIANZA, CERCA DE TI</p>
             <h1>Encuentra al profesional que necesitas, <span>en un solo lugar.</span></h1>
-            <p className="home-lead">Plomeros, maestros de obra, carpinteros y especialistas listos para ayudarte.</p>
+            <p className="home-lead">Gasfíteres, maestros de obra, carpinteros y especialistas listos para ayudarte.</p>
             <form className="home-search" onSubmit={submit}>
-              <label className="home-search-query"><span aria-hidden="true">⌕</span><span className="home-search-input"><small>¿Qué servicio necesitas?</small><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ej: plomero, carpintero, gasfíter" /></span></label>
+              <label className="home-search-query"><span aria-hidden="true">⌕</span><span className="home-search-input"><small>¿Qué servicio necesitas?</small><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ej: gasfíter, electricista, carpintero" /></span></label>
               <label className="home-search-location"><span aria-hidden="true">⌖</span><span><small>Ubicación</small><select value={location} onChange={(event) => setLocation(event.target.value)}><option value="">Todas las zonas</option>{LOCATIONS.map((item) => <option key={item} value={item}>{item}</option>)}</select></span></label>
               <button type="submit"><span aria-hidden="true">⌕</span> Buscar</button>
             </form>
