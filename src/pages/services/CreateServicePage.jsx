@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import ImagePicker from '../../components/services/ImagePicker'
+import { ServiceModalityField } from '../../components/services/ServiceModality'
 import { createService, isSupabaseConfigured, supabase, uploadServiceImage } from '../../utils/supabase'
 
 export default function CreateServicePage({ categories }) {
@@ -16,6 +17,8 @@ export default function CreateServicePage({ categories }) {
     location: '',
     startingPrice: '',
     description: '',
+    offersLocal: true,
+    offersHome: false,
   })
   const [imageFile, setImageFile] = useState(null)
 
@@ -50,6 +53,10 @@ export default function CreateServicePage({ categories }) {
   async function handleSubmit(event) {
     event.preventDefault()
     if (!session || !supabase) return
+    if (!form.offersLocal && !form.offersHome) {
+      setError('Selecciona al menos una modalidad de atención: en local o a domicilio.')
+      return
+    }
 
     setSaving(true)
     setError('')
@@ -79,6 +86,8 @@ export default function CreateServicePage({ categories }) {
       starting_price: Math.max(0, Math.round(Number(form.startingPrice) || 0)),
       image_url: imageUrl,
       description: form.description.trim(),
+      offers_local: form.offersLocal,
+      offers_home: form.offersHome,
       is_active: true,
     })
 
@@ -114,6 +123,7 @@ export default function CreateServicePage({ categories }) {
         <label>Ubicación<input required maxLength={120} value={form.location} onChange={(event) => updateField('location', event.target.value)} placeholder="Comuna o ciudad" /></label>
         <label>Precio referencial<input type="number" min="0" step="1000" value={form.startingPrice} onChange={(event) => updateField('startingPrice', event.target.value)} placeholder="Desde" /></label>
         <ImagePicker file={imageFile} onChange={setImageFile} />
+        <ServiceModalityField offersLocal={form.offersLocal} offersHome={form.offersHome} onChange={(value) => setForm((current) => ({ ...current, ...value }))} />
         <label className="field-wide">Descripción<textarea required maxLength={4000} rows={4} value={form.description} onChange={(event) => updateField('description', event.target.value)} placeholder="Describe el servicio, experiencia y qué incluye." /></label>
         {error && <p className="create-service-error field-wide" role="alert">{error}</p>}
         <div className="create-service-actions field-wide">

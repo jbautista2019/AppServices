@@ -12,7 +12,7 @@ export async function getPublishedServices() {
 
   const { data, error } = await supabase
     .from('services')
-    .select('id, title, provider_id, provider_name, category, location, rating, starting_price, image_url, description')
+    .select('*')
     .eq('is_active', true)
     .order('created_at', { ascending: false })
 

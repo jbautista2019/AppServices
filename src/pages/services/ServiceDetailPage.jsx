@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import ImagePicker from '../../components/services/ImagePicker'
 import Stars from '../../components/reviews/Stars'
+import { ModalityBadges, ServiceModalityField } from '../../components/services/ServiceModality'
 import { getOrCreateConversation, getServiceById, getServiceReviews, isSupabaseConfigured, supabase, updateService, uploadServiceImage } from '../../utils/supabase'
 
 export default function ServiceDetailPage({ services, loading, loadError }) {
@@ -23,6 +24,8 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
     starting_price: '',
     description: '',
     image_url: '',
+    offers_local: true,
+    offers_home: false,
   })
   const [imageFile, setImageFile] = useState(null)
   const [imageRemoved, setImageRemoved] = useState(false)
@@ -78,6 +81,8 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
           category: data.category || '',
           location: data.location || '',
           starting_price: data.starting_price ?? '',
+          offers_local: data.offers_local !== false,
+          offers_home: data.offers_home === true,
           description: data.description || '',
           image_url: data.image_url || '',
         })
@@ -165,8 +170,14 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
         category: formData.category.trim(),
         location: formData.location.trim(),
         starting_price: Number(formData.starting_price) || 0,
+        offers_local: formData.offers_local,
+        offers_home: formData.offers_home,
         description: formData.description.trim(),
         image_url: imageUrl,
+      }
+
+      if (!payload.offers_local && !payload.offers_home) {
+        throw new Error('Selecciona al menos una modalidad de atención: en local o a domicilio.')
       }
 
       if (!payload.title || !payload.category || !payload.location) {
@@ -213,6 +224,7 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
           <label>Ubicación<input required maxLength={120} value={formData.location} onChange={(event) => setFormData((current) => ({ ...current, location: event.target.value }))} /></label>
           <label>Precio base<input type="number" min="0" step="1000" value={formData.starting_price} onChange={(event) => setFormData((current) => ({ ...current, starting_price: event.target.value }))} /></label>
           <ImagePicker currentUrl={formData.image_url} file={imageFile} removed={imageRemoved} onChange={(file) => { setImageFile(file); if (file) setImageRemoved(false) }} onRemoveCurrent={() => setImageRemoved(true)} />
+          <ServiceModalityField offersLocal={formData.offers_local} offersHome={formData.offers_home} onChange={({ offersLocal, offersHome }) => setFormData((current) => ({ ...current, offers_local: offersLocal, offers_home: offersHome }))} />
           <label className="field-wide">Descripción<textarea rows="4" required maxLength={4000} value={formData.description} onChange={(event) => setFormData((current) => ({ ...current, description: event.target.value }))} /></label>
           {notice && <p className={`account-notice account-notice--${noticeType} field-wide`} role={noticeType === 'error' ? 'alert' : 'status'}>{notice}</p>}
           <div className="create-service-actions field-wide">
@@ -226,7 +238,7 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
 
   if (!service) return <main className="detail-page"><Link to="/buscar" className="back-link">← Volver a resultados</Link><p>{loadError || 'Esta publicación no está disponible.'}</p></main>
 
-  return <main className="detail-page"><Link to="/buscar" className="back-link">← Volver a resultados</Link><div className="detail-grid"><div>{service.image_url && <img className="detail-image" src={service.image_url} alt={service.title} />}</div><section className="detail-copy"><span className="category-label">{service.category}</span><h1>{service.title}</h1><p className="detail-provider">{service.provider_name} <span className="verified">✓</span></p><div className="detail-rating"><strong>★ {Number(service.rating).toFixed(1)}{reviews.length > 0 && <small> ({reviews.length})</small>}</strong><span>⌖ {service.location}</span></div><hr /><h3>Sobre este servicio</h3><p className="description">{service.description}</p>{!ownsPublishedService && <div className="contact-box"><div><strong>¿Te interesa este servicio?</strong><small>Responde normalmente en menos de una hora.</small>{notice && <small className="contact-notice" role="alert">{notice}</small>}</div><button className="dark-button" type="button" disabled={saving} onClick={handleContact}>{saving ? 'Abriendo chat...' : 'Contactar'} <span aria-hidden="true">→</span></button></div>}</section></div>
+  return <main className="detail-page"><Link to="/buscar" className="back-link">← Volver a resultados</Link><div className="detail-grid"><div>{service.image_url && <img className="detail-image" src={service.image_url} alt={service.title} />}</div><section className="detail-copy"><span className="category-label">{service.category}</span><h1>{service.title}</h1><p className="detail-provider">{service.provider_name} <span className="verified">✓</span></p><div className="detail-rating"><strong>★ {Number(service.rating).toFixed(1)}{reviews.length > 0 && <small> ({reviews.length})</small>}</strong><span>⌖ {service.location}</span><ModalityBadges service={service} /></div><hr /><h3>Sobre este servicio</h3><p className="description">{service.description}</p>{!ownsPublishedService && <div className="contact-box"><div><strong>¿Te interesa este servicio?</strong><small>Responde normalmente en menos de una hora.</small>{notice && <small className="contact-notice" role="alert">{notice}</small>}</div><button className="dark-button" type="button" disabled={saving} onClick={handleContact}>{saving ? 'Abriendo chat...' : 'Contactar'} <span aria-hidden="true">→</span></button></div>}</section></div>
     <section className="reviews-section" aria-labelledby="reviews-title">
       <h2 id="reviews-title">Valoraciones{reviews.length > 0 && <small> · {reviews.length}</small>}</h2>
       {reviews.length ? <ul className="reviews-list">{reviews.map((review) => <li key={review.id}>
