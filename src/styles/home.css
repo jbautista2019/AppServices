@@ -1770,3 +1770,45 @@
   background: #eef5ff;
   color: var(--brand-blue-dark);
 }
+
+/* Footer aprovechando todo el ancho: marca a la izquierda y hasta cuatro columnas de enlaces */
+.footer-main {
+  grid-template-columns: minmax(220px, 1fr) minmax(0, 3fr);
+  gap: 40px;
+  padding: 34px 28px 28px;
+}
+
+.footer-brand-block > p {
+  max-width: 300px;
+  margin: 12px 0 12px;
+  font-size: 13px;
+}
+
+.footer-location {
+  font-size: 12px;
+}
+
+.footer-links {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 24px 32px;
+}
+
+.footer-links h2 {
+  font-size: 14px;
+}
+
+.footer-links a {
+  font-size: 13px;
+}
+
+.footer-bottom {
+  font-size: 12px;
+}
+
+@media (max-width: 860px) {
+  .footer-main {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 28px 20px 22px;
+  }
+}

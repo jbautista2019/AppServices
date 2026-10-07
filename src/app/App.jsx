@@ -72,7 +72,7 @@ export default function App() {
     </Routes>
     {loginOpen && <AccountPage />}
     {registrationOpen && <RegistrationModal onClose={() => navigate(backgroundLocation ? `${backgroundLocation.pathname}${backgroundLocation.search}${backgroundLocation.hash}` : '/', { replace: true })} />}
-    <Footer />
+    <Footer categories={categories} />
     <LoadingOverlay />
   </>
 }
