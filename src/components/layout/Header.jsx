@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { getUnreadMessageNotifications, isCategoryAdmin, supabase } from '../../utils/supabase'
 
 export default function Header() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const [searchText, setSearchText] = useState(() => (location.pathname === '/buscar' ? new URLSearchParams(location.search).get('q') || '' : ''))
   const activePath = location.state?.backgroundLocation?.pathname || location.pathname
   const isActive = (path) => activePath === path
   const [session, setSession] = useState(null)
@@ -88,6 +90,16 @@ export default function Header() {
   }, [session?.user?.id])
 
   useEffect(() => {
+    if (location.pathname === '/buscar') setSearchText(new URLSearchParams(location.search).get('q') || '')
+  }, [location.pathname, location.search])
+
+  function handleSearch(event) {
+    event.preventDefault()
+    const term = searchText.trim()
+    navigate(term ? `/buscar?q=${encodeURIComponent(term)}` : '/buscar')
+  }
+
+  useEffect(() => {
     setProfileMenuOpen(false)
     setNotificationsOpen(false)
   }, [location.pathname, location.search])
@@ -126,6 +138,12 @@ export default function Header() {
   return <header className="site-header">
     <div className="header-inner">
       <Link to="/" className="brand"><span className="brand-mark" aria-hidden="true">⌂</span><span className="brand-copy">oficios <i>cerca</i><small>Servicios de confianza, cerca de ti</small></span></Link>
+      <form className="header-search" role="search" onSubmit={handleSearch}>
+        <input type="search" aria-label="Buscar servicios" placeholder="Busca gasfíter, electricista, manicure..." value={searchText} onChange={(event) => setSearchText(event.target.value)} />
+        <button type="submit" aria-label="Buscar">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+        </button>
+      </form>
       <nav aria-label="Navegación principal">
         <Link className={isActive('/') ? 'header-nav-active' : ''} to="/">Inicio</Link>
         <Link className={isActive('/buscar') ? 'header-nav-active' : ''} to="/buscar">Categorías</Link>
@@ -166,8 +184,7 @@ export default function Header() {
             <nav className="header-profile-links" aria-label="Opciones de mi cuenta">
               <Link to="/perfil" state={{ profileSection: 'profile', profileEditing: true }} onClick={() => setProfileMenuOpen(false)}>Mi perfil</Link>
               {categoryAdminChecked && canManageCategories ? <Link to="/admin/categorias" onClick={() => setProfileMenuOpen(false)}>Administrar categorías</Link> : categoryAdminChecked && <>
-                <Link to="/perfil" state={{ profileSection: 'services' }} onClick={() => setProfileMenuOpen(false)}>Mis servicios</Link>
-                <Link to="/perfil" state={{ profileSection: 'explore' }} onClick={() => setProfileMenuOpen(false)}>Explorar servicios</Link>
+                <Link to="/mis-servicios" onClick={() => setProfileMenuOpen(false)}>Mis servicios</Link>
                 <Link to="/mensajes" onClick={() => setProfileMenuOpen(false)}>Mensajes</Link>
               </>}
             </nav>

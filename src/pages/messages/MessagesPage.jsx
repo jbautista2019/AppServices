@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
-import { deleteConversation, getConversationMessages, getInboxMessages, getUserConversations, isSupabaseConfigured, markConversationMessagesRead, sendConversationMessage, supabase } from '../../utils/supabase'
+import { deleteConversation, getConversationMessages, getInboxMessages, getUserConversations, isSupabaseConfigured, markConversationMessagesRead, requestServiceReview, sendConversationMessage, supabase } from '../../utils/supabase'
 
 const CHAT_EMOJIS = ['👍', '👋', '😊', '🙏', '❤️', '✅', '🎉', '💡', '📍', '📷', '🔧', '🏠']
 const MOBILE_QUERY = '(max-width: 700px)'
@@ -42,6 +43,15 @@ function formatInboxTime(timestamp) {
   return new Date(timestamp).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' })
 }
 
+// Convierte los enlaces internos de valoración (/valorar/<id>) en enlaces navegables.
+const REVIEW_LINK = /(\/valorar\/[0-9a-f-]{36})/i
+
+function MessageText({ content }) {
+  return content.split(REVIEW_LINK).map((part, index) => REVIEW_LINK.test(part)
+    ? <Link className="message-review-link" key={index} to={part}>Valorar este servicio →</Link>
+    : <Fragment key={index}>{part}</Fragment>)
+}
+
 function upsertMessage(list, message) {
   if (list.some((item) => item.id === message.id)) return list.map((item) => (item.id === message.id ? { ...item, ...message } : item))
   return [...list, message].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
@@ -62,6 +72,7 @@ export default function MessagesPage() {
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false)
   const [sending, setSending] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [requestingReview, setRequestingReview] = useState(false)
   const [notice, setNotice] = useState('')
   const [search, setSearch] = useState('')
   const feedRef = useRef(null)
@@ -297,6 +308,23 @@ export default function MessagesPage() {
     textareaRef.current?.focus()
   }
 
+  async function handleRequestReview() {
+    if (!activeConversation || requestingReview) return
+    const name = getCounterpartName(activeConversation, userId)
+    if (!window.confirm(`¿Enviar a ${name} una solicitud para que valore "${activeConversation.service_title}"?`)) return
+
+    setRequestingReview(true)
+    setNotice('')
+    const { error } = await requestServiceReview(activeConversation.id)
+    if (error) setNotice(error.message)
+    else {
+      stickToBottomRef.current = true
+      const { data } = await getConversationMessages(activeConversation.id)
+      if (data) setMessages(data)
+    }
+    setRequestingReview(false)
+  }
+
   async function handleDeleteConversation() {
     if (!activeConversation || deleting) return
     const confirmed = window.confirm(`¿Eliminar la conversación sobre "${activeConversation.service_title}"? Se borrarán los mensajes para ti; la otra persona conservará el chat. Si te escribe de nuevo, la conversación reaparecerá solo con los mensajes nuevos.`)
@@ -380,6 +408,7 @@ export default function MessagesPage() {
             </button>
             <div><span>Conversación con</span><h2>{counterpartName}</h2></div>
             <p>Publicación: <Link to={`/servicio/${activeConversation.service_id}`}>{activeConversation.service_title}</Link></p>
+            {String(activeConversation.provider_id) === String(userId) && <button className="messages-request-review" type="button" disabled={requestingReview} onClick={handleRequestReview} title="Enviar un mensaje pidiendo que valore tu servicio">★ Solicitar valoración</button>}
             <button className="messages-delete-conversation" type="button" disabled={deleting} onClick={handleDeleteConversation} aria-label="Eliminar conversación" title="Eliminar conversación para mí">
               <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="m19 6-1 14H6L5 6" /><path d="M10 11v5M14 11v5" /></svg>
             </button>
@@ -393,7 +422,7 @@ export default function MessagesPage() {
               return <div className="message-row" key={message.id}>
                 {newDay && <div className="message-day"><span>{formatDayLabel(message.created_at)}</span></div>}
                 <article className={`message-bubble${mine ? ' mine' : ''}`}>
-                  <p>{message.content}</p>
+                  <p><MessageText content={message.content} /></p>
                   <time dateTime={message.created_at}>
                     {formatMessageTime(message.created_at)}
                     {mine && <span className={`message-status${message.read_at ? ' is-read' : ''}`} aria-label={message.read_at ? 'Leído' : 'Enviado'} title={message.read_at ? 'Leído' : 'Enviado'}>

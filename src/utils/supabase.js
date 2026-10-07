@@ -258,3 +258,73 @@ export async function uploadServiceImage(file, userId) {
 
   return { url: supabase.storage.from(SERVICE_IMAGE_BUCKET).getPublicUrl(path).data.publicUrl, error: null }
 }
+
+function friendlyReviewError(error) {
+  if (!error) return null
+  if (error.code === 'PGRST202' || /schema cache/i.test(error.message || '')) {
+    return new Error('Falta habilitar las valoraciones en Supabase. Ejecuta supabase/reviews.sql.')
+  }
+  return new Error(error.message)
+}
+
+export async function requestServiceReview(conversationId) {
+  if (!supabase || !conversationId) return { data: null, error: new Error('No se pudo identificar la conversación.') }
+
+  const { data, error } = await supabase.rpc('request_review', { p_conversation_id: conversationId })
+  return { data, error: friendlyReviewError(error) }
+}
+
+export async function getReviewRequest(requestId) {
+  if (!supabase || !requestId) return { data: null, error: new Error('Solicitud no válida.') }
+
+  return supabase
+    .from('review_requests')
+    .select('id, service_id, requester_id, recipient_id, service_title, requester_name, completed_at')
+    .eq('id', requestId)
+    .maybeSingle()
+}
+
+export async function submitServiceReview(requestId, rating, comment) {
+  if (!supabase || !requestId) return { error: new Error('Solicitud no válida.') }
+
+  const { error } = await supabase.rpc('submit_review', { p_request_id: requestId, p_rating: rating, p_comment: comment || null })
+  return { error: friendlyReviewError(error) }
+}
+
+export async function getServiceReviews(serviceId) {
+  if (!supabase || !serviceId) return { data: [], error: null }
+
+  return supabase
+    .from('service_reviews')
+    .select('id, reviewer_name, rating, comment, created_at')
+    .eq('service_id', serviceId)
+    .order('created_at', { ascending: false })
+    .limit(50)
+}
+
+// Promedio y distribución de las valoraciones recibidas en todos los servicios de un prestador.
+export async function getProviderRatingSummary(userId) {
+  if (!supabase || !userId) return { data: null, error: null }
+
+  const { data: ownServices, error: servicesError } = await supabase
+    .from('services')
+    .select('id')
+    .eq('provider_id', userId)
+  if (servicesError) return { data: null, error: servicesError }
+  if (!ownServices?.length) return { data: null, error: null }
+
+  const { data, error } = await supabase
+    .from('service_reviews')
+    .select('rating')
+    .in('service_id', ownServices.map((service) => service.id))
+
+  if (error || !data?.length) return { data: null, error }
+
+  const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+  let total = 0
+  for (const review of data) {
+    distribution[review.rating] += 1
+    total += review.rating
+  }
+  return { data: { average: total / data.length, count: data.length, distribution }, error: null }
+}

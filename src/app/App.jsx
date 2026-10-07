@@ -4,6 +4,7 @@ import Footer from '../components/layout/Footer'
 import Header from '../components/layout/Header'
 import LoadingOverlay from '../components/layout/LoadingOverlay'
 import AccountPage from '../pages/account/AccountPage'
+import MyServicesRoute from '../pages/account/MyServicesRoute'
 import ProfilePage from '../pages/account/ProfilePage'
 import RegistrationModal from '../pages/account/RegistrationModal'
 import AdminUsersPage from '../pages/admin/AdminUsersPage'
@@ -12,6 +13,7 @@ import HomePage from '../pages/home/HomePage'
 import MessagesPage from '../pages/messages/MessagesPage'
 import ProvidersPage from '../pages/providers/ProvidersPage'
 import SearchPage from '../pages/search/SearchPage'
+import ReviewPage from '../pages/reviews/ReviewPage'
 import ServiceDetailPage from '../pages/services/ServiceDetailPage'
 import CreateServicePage from '../pages/services/CreateServicePage'
 import { getCategories, getPublishedServices, isSupabaseConfigured } from '../utils/supabase'
@@ -29,6 +31,8 @@ export default function App() {
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(isSupabaseConfigured)
   const [loadError, setLoadError] = useState(isSupabaseConfigured ? '' : 'Configura Supabase para cargar publicaciones.')
+
+  const refreshServices = location.state?.refreshServices ? location.key : null
 
   useEffect(() => {
     if (!isSupabaseConfigured) return
@@ -48,7 +52,7 @@ export default function App() {
     })
 
     return () => { cancelled = true }
-  }, [])
+  }, [refreshServices])
 
   return <>
     <Header />
@@ -58,8 +62,10 @@ export default function App() {
       <Route path="/servicio/nuevo" element={<CreateServicePage categories={categories} />} />
       <Route path="/servicio/:id" element={<ServiceDetailPage services={services} loading={loading} loadError={loadError} />} />
       <Route path="/servicio/:id/editar" element={<ServiceDetailPage services={services} loading={loading} loadError={loadError} />} />
+      <Route path="/valorar/:requestId" element={<ReviewPage />} />
       <Route path="/prestadores" element={<ProvidersPage />} />
-      <Route path="/perfil" element={<ProfilePage services={services} categories={categories} loading={loading} loadError={loadError} />} />
+      <Route path="/perfil" element={<ProfilePage />} />
+      <Route path="/mis-servicios" element={<MyServicesRoute />} />
       <Route path="/mensajes" element={<MessagesPage />} />
       <Route path="/admin/categorias" element={<CategoriesAdminPage />} />
       <Route path="/admin/usuarios" element={<AdminUsersPage />} />

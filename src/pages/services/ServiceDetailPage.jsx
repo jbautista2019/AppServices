@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import ImagePicker from '../../components/services/ImagePicker'
-import { getOrCreateConversation, getServiceById, isSupabaseConfigured, supabase, updateService, uploadServiceImage } from '../../utils/supabase'
+import Stars from '../../components/reviews/Stars'
+import { getOrCreateConversation, getServiceById, getServiceReviews, isSupabaseConfigured, supabase, updateService, uploadServiceImage } from '../../utils/supabase'
 
 export default function ServiceDetailPage({ services, loading, loadError }) {
   const { id } = useParams()
@@ -26,7 +27,28 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
   const [imageFile, setImageFile] = useState(null)
   const [imageRemoved, setImageRemoved] = useState(false)
 
-  const service = isEditing ? detailService : services.find((item) => String(item.id) === id)
+  const listedService = services.find((item) => String(item.id) === id)
+  const [fetchedService, setFetchedService] = useState(null)
+  const [reviews, setReviews] = useState([])
+  const [fetchedLoading, setFetchedLoading] = useState(false)
+  const service = isEditing ? detailService : listedService || (fetchedService && String(fetchedService.id) === id ? fetchedService : null)
+
+  // Una publicación recién creada puede no estar aún en la lista cargada al inicio: se consulta directamente.
+  useEffect(() => {
+    if (isEditing || !id || loading || listedService || !supabase) return
+
+    let cancelled = false
+    setFetchedLoading(true)
+    getServiceById(id).then(({ data, error }) => {
+      if (cancelled) return
+      if (!error && data) setFetchedService(data)
+      setFetchedLoading(false)
+    }).catch(() => {
+      if (!cancelled) setFetchedLoading(false)
+    })
+
+    return () => { cancelled = true }
+  }, [id, isEditing, loading, Boolean(listedService)])
 
   useEffect(() => {
     if (!supabase) return
@@ -65,6 +87,17 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
     }).catch(() => {
       if (!cancelled) setDetailLoading(false)
     })
+
+    return () => { cancelled = true }
+  }, [id, isEditing])
+
+  useEffect(() => {
+    if (isEditing || !id) return
+
+    let cancelled = false
+    getServiceReviews(id).then(({ data, error }) => {
+      if (!cancelled && !error) setReviews(data || [])
+    }).catch(() => {})
 
     return () => { cancelled = true }
   }, [id, isEditing])
@@ -143,7 +176,7 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
       const { error } = await updateService(detailService.id, session.user.id, payload)
       if (error) throw error
 
-      navigate('/perfil', { replace: true, state: { profileSection: 'services' } })
+      navigate('/mis-servicios', { replace: true, state: { refreshServices: true } })
     } catch (error) {
       setNoticeType('error')
       setNotice(error.message || 'No pudimos actualizar el servicio.')
@@ -152,40 +185,53 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
     }
   }
 
-  if (loading || detailLoading) return <main className="detail-page"><p>Cargando publicación...</p></main>
+  if (loading || detailLoading || fetchedLoading) return <main className="detail-page"><p>Cargando publicación...</p></main>
 
   if (isEditing) {
     if (!isSupabaseConfigured) {
-      return <main className="detail-page"><Link to="/perfil" className="back-link">← Volver al perfil</Link><p>Configura Supabase para editar servicios.</p></main>
+      return <main className="detail-page"><Link to="/mis-servicios" className="back-link">← Volver a mis servicios</Link><p>Configura Supabase para editar servicios.</p></main>
     }
 
     if (!detailService) {
-      return <main className="detail-page"><Link to="/perfil" className="back-link">← Volver al perfil</Link><p>No se encontró este servicio para editar.</p></main>
+      return <main className="detail-page"><Link to="/mis-servicios" className="back-link">← Volver a mis servicios</Link><p>No se encontró este servicio para editar.</p></main>
     }
 
     if (!isOwner) {
-      return <main className="detail-page"><Link to="/perfil" className="back-link">← Volver al perfil</Link><p>No puedes editar este servicio porque no te pertenece.</p></main>
+      return <main className="detail-page"><Link to="/mis-servicios" className="back-link">← Volver a mis servicios</Link><p>No puedes editar este servicio porque no te pertenece.</p></main>
     }
 
-    return <main className="detail-page">
-      <Link to="/perfil" className="back-link">← Volver al perfil</Link>
-      <div className="account-panel" style={{ maxWidth: '720px', margin: '24px auto 0' }}>
-        <h2 style={{ marginBottom: '20px' }}>Editar servicio</h2>
-        <form className="account-form" onSubmit={handleSubmit}>
-          <label>Título<input required value={formData.title} onChange={(event) => setFormData((current) => ({ ...current, title: event.target.value }))} /></label>
+    return <main className="detail-page create-service-page">
+      <Link to="/mis-servicios" className="back-link">← Volver al perfil</Link>
+      <section className="create-service-panel">
+        <header className="create-service-heading">
+          <p className="eyebrow">TU PUBLICACIÓN</p>
+          <h1>Editar servicio</h1>
+        </header>
+        <form className="account-form create-service-form service-form" onSubmit={handleSubmit}>
+          <label className="field-wide">Título<input required maxLength={120} value={formData.title} onChange={(event) => setFormData((current) => ({ ...current, title: event.target.value }))} /></label>
           <label>Categoría<input required value={formData.category} onChange={(event) => setFormData((current) => ({ ...current, category: event.target.value }))} /></label>
-          <label>Ubicación<input required value={formData.location} onChange={(event) => setFormData((current) => ({ ...current, location: event.target.value }))} /></label>
+          <label>Ubicación<input required maxLength={120} value={formData.location} onChange={(event) => setFormData((current) => ({ ...current, location: event.target.value }))} /></label>
           <label>Precio base<input type="number" min="0" step="1000" value={formData.starting_price} onChange={(event) => setFormData((current) => ({ ...current, starting_price: event.target.value }))} /></label>
           <ImagePicker currentUrl={formData.image_url} file={imageFile} removed={imageRemoved} onChange={(file) => { setImageFile(file); if (file) setImageRemoved(false) }} onRemoveCurrent={() => setImageRemoved(true)} />
-          <label>Descripción<textarea rows="6" required value={formData.description} onChange={(event) => setFormData((current) => ({ ...current, description: event.target.value }))} /></label>
-          {notice && <p className={`account-notice account-notice--${noticeType}`} role={noticeType === 'error' ? 'alert' : 'status'}>{notice}</p>}
-          <button type="submit" disabled={saving}>{saving ? 'Guardando...' : 'Guardar cambios'}</button>
+          <label className="field-wide">Descripción<textarea rows="4" required maxLength={4000} value={formData.description} onChange={(event) => setFormData((current) => ({ ...current, description: event.target.value }))} /></label>
+          {notice && <p className={`account-notice account-notice--${noticeType} field-wide`} role={noticeType === 'error' ? 'alert' : 'status'}>{notice}</p>}
+          <div className="create-service-actions field-wide">
+            <Link to="/mis-servicios">Cancelar</Link>
+            <button type="submit" disabled={saving}>{saving ? 'Guardando...' : 'Guardar cambios'}</button>
+          </div>
         </form>
-      </div>
+      </section>
     </main>
   }
 
   if (!service) return <main className="detail-page"><Link to="/buscar" className="back-link">← Volver a resultados</Link><p>{loadError || 'Esta publicación no está disponible.'}</p></main>
 
-  return <main className="detail-page"><Link to="/buscar" className="back-link">← Volver a resultados</Link><div className="detail-grid"><div>{service.image_url && <img className="detail-image" src={service.image_url} alt={service.title} />}</div><section className="detail-copy"><span className="category-label">{service.category}</span><h1>{service.title}</h1><p className="detail-provider">{service.provider_name} <span className="verified">✓</span></p><div className="detail-rating"><strong>★ {Number(service.rating).toFixed(1)}</strong><span>⌖ {service.location}</span></div><hr /><h3>Sobre este servicio</h3><p className="description">{service.description}</p><div className="contact-box"><div><strong>¿Te interesa este servicio?</strong><small>Responde normalmente en menos de una hora.</small>{notice && <small className="contact-notice" role="alert">{notice}</small>}</div><button className="dark-button" type="button" disabled={saving || ownsPublishedService} onClick={handleContact}>{saving ? 'Abriendo chat...' : ownsPublishedService ? 'Tu publicación' : 'Contactar'} <span aria-hidden="true">→</span></button></div></section></div></main>
+  return <main className="detail-page"><Link to="/buscar" className="back-link">← Volver a resultados</Link><div className="detail-grid"><div>{service.image_url && <img className="detail-image" src={service.image_url} alt={service.title} />}</div><section className="detail-copy"><span className="category-label">{service.category}</span><h1>{service.title}</h1><p className="detail-provider">{service.provider_name} <span className="verified">✓</span></p><div className="detail-rating"><strong>★ {Number(service.rating).toFixed(1)}{reviews.length > 0 && <small> ({reviews.length})</small>}</strong><span>⌖ {service.location}</span></div><hr /><h3>Sobre este servicio</h3><p className="description">{service.description}</p>{!ownsPublishedService && <div className="contact-box"><div><strong>¿Te interesa este servicio?</strong><small>Responde normalmente en menos de una hora.</small>{notice && <small className="contact-notice" role="alert">{notice}</small>}</div><button className="dark-button" type="button" disabled={saving} onClick={handleContact}>{saving ? 'Abriendo chat...' : 'Contactar'} <span aria-hidden="true">→</span></button></div>}</section></div>
+    <section className="reviews-section" aria-labelledby="reviews-title">
+      <h2 id="reviews-title">Valoraciones{reviews.length > 0 && <small> · {reviews.length}</small>}</h2>
+      {reviews.length ? <ul className="reviews-list">{reviews.map((review) => <li key={review.id}>
+        <div className="reviews-list-top"><strong>{review.reviewer_name}</strong><Stars value={review.rating} size={14} /><time dateTime={review.created_at}>{new Date(review.created_at).toLocaleDateString('es-CL')}</time></div>
+        {review.comment && <p>{review.comment}</p>}
+      </li>)}</ul> : <p className="reviews-empty">Este servicio aún no tiene valoraciones.</p>}
+    </section></main>
 }

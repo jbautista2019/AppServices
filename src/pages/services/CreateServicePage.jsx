@@ -88,25 +88,25 @@ export default function CreateServicePage({ categories }) {
       return
     }
 
-    navigate('/perfil', { replace: true, state: { profileSection: 'services' } })
+    navigate('/mis-servicios', { replace: true, state: { refreshServices: true } })
   }
 
   if (authLoading) return <main className="detail-page"><p>Comprobando sesión...</p></main>
 
-  if (!isSupabaseConfigured) return <main className="detail-page"><Link to="/perfil" className="back-link">← Volver a mi cuenta</Link><p>Configura Supabase para publicar servicios.</p></main>
+  if (!isSupabaseConfigured) return <main className="detail-page"><Link to="/mis-servicios" className="back-link">← Volver a mis servicios</Link><p>Configura Supabase para publicar servicios.</p></main>
 
-  if (!session) return <main className="detail-page"><Link to="/perfil" className="back-link">← Volver a mi cuenta</Link><div className="create-service-notice"><p>Inicia sesión para crear una publicación.</p><Link to="/cuenta" state={{ backgroundLocation: location }}>Iniciar sesión <span aria-hidden="true">→</span></Link></div></main>
+  if (!session) return <main className="detail-page"><Link to="/mis-servicios" className="back-link">← Volver a mis servicios</Link><div className="create-service-notice"><p>Inicia sesión para crear una publicación.</p><Link to="/cuenta" state={{ backgroundLocation: location }}>Iniciar sesión <span aria-hidden="true">→</span></Link></div></main>
 
   return <main className="detail-page create-service-page">
-    <Link to="/perfil" state={{ profileSection: 'services' }} className="back-link">← Volver a mis servicios</Link>
+    <Link to="/mis-servicios" className="back-link">← Volver a mis servicios</Link>
     <section className="create-service-panel">
       <header className="create-service-heading">
         <p className="eyebrow">PUBLICA TU OFICIO</p>
         <h1>Crear servicio</h1>
         <p>Cuéntales a tus futuros clientes qué ofreces.</p>
       </header>
-      <form className="account-form create-service-form" onSubmit={handleSubmit}>
-        <label>Título del servicio<input required maxLength={120} value={form.title} onChange={(event) => updateField('title', event.target.value)} placeholder="Ej. Reparación de grifería" /></label>
+      <form className="account-form create-service-form service-form" onSubmit={handleSubmit}>
+        <label className="field-wide">Título del servicio<input required maxLength={120} value={form.title} onChange={(event) => updateField('title', event.target.value)} placeholder="Ej. Reparación de grifería" /></label>
         <label>Categoría<select required value={form.category} onChange={(event) => updateField('category', event.target.value)}>
           <option value="">Selecciona una categoría</option>
           {categories.map((category) => <option key={category.name} value={category.name}>{category.name}</option>)}
@@ -114,13 +114,13 @@ export default function CreateServicePage({ categories }) {
         <label>Ubicación<input required maxLength={120} value={form.location} onChange={(event) => updateField('location', event.target.value)} placeholder="Comuna o ciudad" /></label>
         <label>Precio referencial<input type="number" min="0" step="1000" value={form.startingPrice} onChange={(event) => updateField('startingPrice', event.target.value)} placeholder="Desde" /></label>
         <ImagePicker file={imageFile} onChange={setImageFile} />
-        <label>Descripción<textarea required maxLength={4000} rows={5} value={form.description} onChange={(event) => updateField('description', event.target.value)} placeholder="Describe el servicio, experiencia y qué incluye." /></label>
-        {error && <p className="create-service-error" role="alert">{error}</p>}
-        <div className="create-service-actions">
-          <Link to="/perfil" state={{ profileSection: 'services' }}>Cancelar</Link>
+        <label className="field-wide">Descripción<textarea required maxLength={4000} rows={4} value={form.description} onChange={(event) => updateField('description', event.target.value)} placeholder="Describe el servicio, experiencia y qué incluye." /></label>
+        {error && <p className="create-service-error field-wide" role="alert">{error}</p>}
+        <div className="create-service-actions field-wide">
+          <Link to="/mis-servicios">Cancelar</Link>
           <button type="submit" disabled={saving || !categories.length}>{saving ? 'Publicando...' : 'Publicar servicio'}</button>
         </div>
-        {!categories.length && <p className="create-service-error" role="status">No hay categorías disponibles para publicar.</p>}
+        {!categories.length && <p className="create-service-error field-wide" role="status">No hay categorías disponibles para publicar.</p>}
       </form>
     </section>
   </main>

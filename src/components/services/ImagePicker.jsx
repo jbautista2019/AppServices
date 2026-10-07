@@ -30,11 +30,13 @@ export default function ImagePicker({ currentUrl, file, onChange, onRemoveCurren
 
   return <div className="image-picker">
     <span className="image-picker-label">Imagen (opcional)</span>
+    <div className="image-picker-body">
     {shownUrl && <img className="image-picker-preview" src={shownUrl} alt="Vista previa de la imagen del servicio" />}
     <div className="image-picker-actions">
       <button type="button" onClick={() => inputRef.current?.click()}>{shownUrl ? 'Cambiar imagen' : 'Subir imagen'}</button>
       {shownUrl && <button type="button" className="image-picker-remove" onClick={() => { setError(''); if (file) onChange(null); else onRemoveCurrent?.() }}>Quitar</button>}
       <small>JPG, PNG o WebP · máx. 5 MB</small>
+    </div>
     </div>
     <input ref={inputRef} type="file" accept={SERVICE_IMAGE_TYPES.join(',')} hidden onChange={handleSelect} />
     {error && <p className="image-picker-error" role="alert">{error}</p>}

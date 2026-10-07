@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import ServiceCard from '../../components/services/ServiceCard'
 
 const SERVICES_PER_PAGE = 6
@@ -10,12 +11,23 @@ function parsePriceFilter(value) {
 
 export default function SearchPage({ services, categories, loading, loadError, embedded = false }) {
   const params = new URLSearchParams(window.location.search)
+  const [urlParams, setUrlParams] = useSearchParams()
   const [query, setQuery] = useState(params.get('q') || '')
   const [category, setCategory] = useState(params.get('category') || 'Todas')
   const [location, setLocation] = useState(params.get('location') || '')
   const [minimumPrice, setMinimumPrice] = useState('')
   const [maximumPrice, setMaximumPrice] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const urlKey = urlParams.toString()
+
+  // Mantiene los filtros sincronizados cuando la búsqueda cambia desde el header estando ya en /buscar.
+  useEffect(() => {
+    if (embedded) return
+    setQuery(urlParams.get('q') || '')
+    setCategory(urlParams.get('category') || 'Todas')
+    setLocation(urlParams.get('location') || '')
+    setCurrentPage(1)
+  }, [urlKey, embedded])
   const filtered = useMemo(() => {
     const locationQuery = location.trim().toLocaleLowerCase('es-CL')
 
@@ -38,20 +50,11 @@ export default function SearchPage({ services, categories, loading, loadError, e
 
   return (
     <PageWrapper className={`results-page${embedded ? ' results-page--embedded' : ''}`}>
-      <div className="results-intro">
-        <p className="eyebrow">SERVICIOS CERCA DE TI</p>
-        <h1>Encuentra lo que necesitas.</h1>
-        <div className="compact-search">
-          <span>⌕</span>
-          <input value={query} onChange={(event) => { setQuery(event.target.value); setCurrentPage(1) }} placeholder="Busca por servicio, nombre o comuna" />
-          <button aria-label="Buscar">→</button>
-        </div>
-      </div>
       <div className="results-layout">
         <aside className="filters">
           <div className="filter-title">
             <strong>Filtrar resultados</strong>
-            <button onClick={() => { setQuery(''); setCategory('Todas'); setLocation(''); setMinimumPrice(''); setMaximumPrice(''); setCurrentPage(1) }}>Limpiar</button>
+            <button onClick={() => { setQuery(''); setCategory('Todas'); setLocation(''); setMinimumPrice(''); setMaximumPrice(''); setCurrentPage(1); if (!embedded) setUrlParams({}) }}>Limpiar</button>
           </div>
           <label>
             Servicio o categoría
