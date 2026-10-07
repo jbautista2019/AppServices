@@ -1705,3 +1705,41 @@ button.account-module-card {
   background: #e6f6ec;
   color: #1c7a43;
 }
+
+.profile-security {
+  display: grid;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.profile-security-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.profile-security-heading h2 {
+  margin: 0 0 3px;
+  font-size: 16px;
+  letter-spacing: 0;
+}
+
+.profile-security-heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.profile-security-heading .profile-edit-button {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 560px) {
+  .profile-security-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

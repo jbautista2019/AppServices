@@ -328,3 +328,25 @@ export async function getProviderRatingSummary(userId) {
   }
   return { data: { average: total / data.length, count: data.length, distribution }, error: null }
 }
+
+export const MIN_PASSWORD_LENGTH = 8
+
+// Cambia la contraseña del usuario actual. Si la cuenta ya tiene contraseña (correo), exige la actual.
+export async function changePassword({ email, currentPassword, newPassword }) {
+  if (!supabase) return { error: new Error('Supabase no está configurado.') }
+  if (newPassword.length < MIN_PASSWORD_LENGTH) return { error: new Error(`La nueva contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`) }
+
+  if (currentPassword !== null) {
+    const { error: verifyError } = await supabase.auth.signInWithPassword({ email, password: currentPassword })
+    if (verifyError) return { error: new Error('La contraseña actual no es correcta.') }
+    if (currentPassword === newPassword) return { error: new Error('La nueva contraseña debe ser distinta a la actual.') }
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: newPassword })
+  if (error) {
+    if (error.code === 'same_password') return { error: new Error('La nueva contraseña debe ser distinta a la actual.') }
+    if (error.code === 'weak_password') return { error: new Error('La contraseña es demasiado débil. Usa letras, números y símbolos.') }
+    return { error: new Error('No se pudo cambiar la contraseña. Inténtalo nuevamente.') }
+  }
+  return { error: null }
+}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import Stars from '../../components/reviews/Stars'
-import { getProviderRatingSummary, isCategoryAdmin, isSupabaseConfigured, supabase } from '../../utils/supabase'
+import { changePassword, getProviderRatingSummary, isCategoryAdmin, MIN_PASSWORD_LENGTH, isSupabaseConfigured, supabase } from '../../utils/supabase'
 
 function getFullName(user) {
   return user?.user_metadata?.full_name || user?.user_metadata?.name || ''
@@ -19,7 +19,15 @@ export default function ProfilePage() {
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
   const [noticeType, setNoticeType] = useState('info')
+  const [passwordOpen, setPasswordOpen] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordBusy, setPasswordBusy] = useState(false)
+  const [passwordNotice, setPasswordNotice] = useState({ type: 'info', text: '' })
   const userId = session?.user?.id
+  // Las cuentas creadas solo con Google no tienen contraseña actual que verificar.
+  const hasPassword = Boolean(session?.user?.identities?.some((identity) => identity.provider === 'email'))
 
   useEffect(() => {
     if (!supabase) {
@@ -114,6 +122,37 @@ export default function ProfilePage() {
     }
   }
 
+  function closePasswordForm() {
+    setPasswordOpen(false)
+    setCurrentPassword('')
+    setNewPassword('')
+    setConfirmPassword('')
+  }
+
+  async function handleChangePassword(event) {
+    event.preventDefault()
+    if (newPassword !== confirmPassword) {
+      setPasswordNotice({ type: 'error', text: 'La confirmación no coincide con la nueva contraseña.' })
+      return
+    }
+
+    setPasswordBusy(true)
+    setPasswordNotice({ type: 'info', text: '' })
+    const { error } = await changePassword({
+      email: session.user.email,
+      currentPassword: hasPassword ? currentPassword : null,
+      newPassword,
+    })
+    setPasswordBusy(false)
+
+    if (error) {
+      setPasswordNotice({ type: 'error', text: error.message })
+      return
+    }
+    closePasswordForm()
+    setPasswordNotice({ type: 'success', text: 'Tu contraseña se actualizó correctamente.' })
+  }
+
   async function handleLogout() {
     if (!supabase) return
     await supabase.auth.signOut()
@@ -163,6 +202,23 @@ export default function ProfilePage() {
             </div>
           </form>}
           {notice && <p className={`account-notice account-notice--${noticeType}`} role={noticeType === 'error' ? 'alert' : 'status'}>{notice}</p>}
+
+          <section className="profile-security" aria-label="Seguridad">
+            <div className="profile-security-heading">
+              <div><h2>Contraseña</h2><p>{hasPassword ? 'Cambia la contraseña con la que inicias sesión.' : 'Tu cuenta usa Google. Puedes crear una contraseña para entrar también con tu correo.'}</p></div>
+              {!passwordOpen && <button className="profile-edit-button" type="button" onClick={() => { setPasswordNotice({ type: 'info', text: '' }); setPasswordOpen(true) }}>{hasPassword ? 'Cambiar contraseña' : 'Crear contraseña'}</button>}
+            </div>
+            {passwordOpen && <form className="account-form profile-form" onSubmit={handleChangePassword}>
+              {hasPassword && <label>Contraseña actual<input type="password" autoComplete="current-password" required value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} /></label>}
+              <label>Nueva contraseña<input type="password" autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} required value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder={`Mínimo ${MIN_PASSWORD_LENGTH} caracteres`} /></label>
+              <label>Confirmar nueva contraseña<input type="password" autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} /></label>
+              <div className="account-inline-actions">
+                <button type="submit" disabled={passwordBusy}>{passwordBusy ? 'Guardando...' : 'Guardar contraseña'}</button>
+                <button type="button" onClick={closePasswordForm}>Cancelar</button>
+              </div>
+            </form>}
+            {passwordNotice.text && <p className={`account-notice account-notice--${passwordNotice.type}`} role={passwordNotice.type === 'error' ? 'alert' : 'status'}>{passwordNotice.text}</p>}
+          </section>
 
           <footer className="profile-card-footer">
             {isAdmin && <Link to="/admin/categorias">Administrar categorías <span>→</span></Link>}
