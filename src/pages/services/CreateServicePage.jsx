@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import CommuneInput from '../../components/common/CommuneInput'
 import ImagePicker from '../../components/services/ImagePicker'
 import { ServiceModalityField } from '../../components/services/ServiceModality'
-import { createService, isSupabaseConfigured, supabase, uploadServiceImage } from '../../utils/supabase'
+import { createService, isSupabaseConfigured, refreshServiceEmbedding, supabase, uploadServiceImage } from '../../utils/supabase'
 
 export default function CreateServicePage({ categories }) {
   const location = useLocation()
@@ -77,7 +77,7 @@ export default function CreateServicePage({ categories }) {
       imageUrl = url
     }
 
-    const { error: saveError } = await createService({
+    const { data: created, error: saveError } = await createService({
       provider_id: session.user.id,
       provider_name: providerName,
       title: form.title.trim(),
@@ -98,6 +98,7 @@ export default function CreateServicePage({ categories }) {
       return
     }
 
+    refreshServiceEmbedding(created?.id)
     navigate('/mis-servicios', { replace: true, state: { refreshServices: true } })
   }
 

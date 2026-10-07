@@ -59,6 +59,21 @@ npx --yes supabase functions deploy admin-users
 
 La función usa `SUPABASE_URL`, `SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY` del entorno de Edge Functions de Supabase. Solo usuarios cuyo UUID esté en `public.category_admins` pueden acceder. Las cuentas administradoras no se pueden inhabilitar desde este módulo.
 
+### Búsqueda híbrida (texto + semántica)
+
+El buscador combina coincidencia de texto (sin tildes, con tolerancia a errores de tipeo y sinónimos chilenos como plomero → gasfíter) con búsqueda semántica por embeddings (modelo `gte-small`, 384 dimensiones). Las búsquedas cortas ("Maipú", "gasfíter") priorizan el texto y las frases largas ("me gotea el techo") priorizan la semántica; una coincidencia exacta siempre queda primero. Si el servicio no está disponible, la búsqueda cae a coincidencia de texto simple en el navegador.
+
+1. Ejecuta `supabase/semantic-search.sql` en el **SQL Editor** (activa `vector`, `unaccent` y `pg_trgm`, agrega `services.embedding`, la tabla de sinónimos y la función `search_services`).
+2. Despliega la Edge Function:
+
+```bash
+npx --yes supabase functions deploy semantic-search
+```
+
+3. No hay que cargar nada a mano: la función calcula los embeddings de los servicios que todavía no los tienen (8 por búsqueda) y se recalculan al crear o editar un servicio.
+
+Para ampliar el vocabulario agrega filas a `public.search_synonyms` (`term` es la cabeza del grupo y `synonym` cada palabra equivalente, en minúsculas y sin tildes). Los umbrales se ajustan al inicio de `search_services` (`p_min_similarity`, `semantic_margin`, pesos de texto/semántica).
+
 ### Estructura del frontend
 
 ```text

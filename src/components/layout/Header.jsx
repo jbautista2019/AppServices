@@ -147,7 +147,6 @@ export default function Header() {
       <nav aria-label="Navegación principal">
         <Link className={isActive('/') ? 'header-nav-active' : ''} to="/">Inicio</Link>
         <Link className={isActive('/buscar') ? 'header-nav-active' : ''} to="/buscar">Categorías</Link>
-        <Link className={isActive('/prestadores') ? 'header-nav-active' : ''} to="/prestadores">Para profesionales</Link>
       </nav>
       <div className="header-actions">
         {session && <div className="header-notifications-wrap" ref={notificationsRef}>

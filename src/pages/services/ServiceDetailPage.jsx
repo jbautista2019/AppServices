@@ -4,7 +4,7 @@ import CommuneInput from '../../components/common/CommuneInput'
 import ImagePicker from '../../components/services/ImagePicker'
 import Stars from '../../components/reviews/Stars'
 import { ModalityBadges, ServiceModalityField } from '../../components/services/ServiceModality'
-import { getOrCreateConversation, getServiceById, getServiceReviews, isSupabaseConfigured, supabase, updateService, uploadServiceImage } from '../../utils/supabase'
+import { getOrCreateConversation, getServiceById, getServiceReviews, isSupabaseConfigured, refreshServiceEmbedding, supabase, updateService, uploadServiceImage } from '../../utils/supabase'
 
 export default function ServiceDetailPage({ services, loading, loadError }) {
   const { id } = useParams()
@@ -188,6 +188,7 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
       const { error } = await updateService(detailService.id, session.user.id, payload)
       if (error) throw error
 
+      refreshServiceEmbedding(detailService.id)
       navigate('/mis-servicios', { replace: true, state: { refreshServices: true } })
     } catch (error) {
       setNoticeType('error')

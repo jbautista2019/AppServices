@@ -2,12 +2,17 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import CommuneInput from '../../components/common/CommuneInput'
 import ServiceCard from '../../components/services/ServiceCard'
+import { semanticSearch } from '../../utils/supabase'
 
 const SERVICES_PER_PAGE = 6
 
 function parsePriceFilter(value) {
   const digits = String(value).replace(/\D/g, '')
   return digits ? Number(digits) : null
+}
+
+function normalizeText(text) {
+  return String(text || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
 }
 
 export default function SearchPage({ services, categories, loading, loadError, embedded = false }) {
@@ -20,6 +25,33 @@ export default function SearchPage({ services, categories, loading, loadError, e
   const [maximumPrice, setMaximumPrice] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const urlKey = urlParams.toString()
+  // Resultado de la búsqueda híbrida para la consulta activa (null = no hay consulta o falló el servicio).
+  const [ranking, setRanking] = useState(null)
+  const [searching, setSearching] = useState(false)
+
+  useEffect(() => {
+    const term = query.trim()
+    setRanking(null)
+    if (embedded || !term) {
+      setSearching(false)
+      return
+    }
+
+    let cancelled = false
+    setSearching(true)
+    const timer = setTimeout(() => {
+      semanticSearch(term).then(({ data, error }) => {
+        if (cancelled) return
+        setRanking(error || !data ? null : new Map(data.map((result) => [String(result.id), result])))
+        setSearching(false)
+      })
+    }, 250)
+
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [query, embedded])
 
   // Mantiene los filtros sincronizados cuando la búsqueda cambia desde el header estando ya en /buscar.
   useEffect(() => {
@@ -32,8 +64,13 @@ export default function SearchPage({ services, categories, loading, loadError, e
   const filtered = useMemo(() => {
     const locationQuery = location.trim().toLocaleLowerCase('es-CL')
 
-    return services.filter((service) => {
-      const matchesQuery = !query || `${service.title} ${service.provider_name} ${service.category} ${service.location}`.toLowerCase().includes(query.toLowerCase())
+    const fallbackQuery = normalizeText(query).trim()
+
+    const matches = services.filter((service) => {
+      // Con ranking híbrido manda la relevancia del servidor; si no está disponible se usa coincidencia de texto sin tildes.
+      const matchesQuery = !fallbackQuery || (ranking
+        ? ranking.has(String(service.id))
+        : normalizeText(`${service.title} ${service.provider_name} ${service.category} ${service.location}`).includes(fallbackQuery))
       const matchesCategory = category === 'Todas' || service.category === category
       const matchesLocation = !locationQuery || (service.location || '').toLocaleLowerCase('es-CL').includes(locationQuery)
       const price = Number(service.starting_price)
@@ -44,7 +81,10 @@ export default function SearchPage({ services, categories, loading, loadError, e
 
       return matchesQuery && matchesCategory && matchesLocation && matchesMinimumPrice && matchesMaximumPrice
     })
-  }, [query, category, location, minimumPrice, maximumPrice, services])
+
+    if (!ranking) return matches
+    return matches.sort((first, second) => ranking.get(String(second.id)).score - ranking.get(String(first.id)).score)
+  }, [query, category, location, minimumPrice, maximumPrice, services, ranking])
   const pageCount = Math.ceil(filtered.length / SERVICES_PER_PAGE)
   const visibleServices = filtered.slice((currentPage - 1) * SERVICES_PER_PAGE, currentPage * SERVICES_PER_PAGE)
   const PageWrapper = embedded ? 'div' : 'main'
@@ -78,12 +118,13 @@ export default function SearchPage({ services, categories, loading, loadError, e
         </aside>
         <section className="listing">
           <div className="listing-top">
-            <span><strong>{loading ? '...' : filtered.length}</strong> servicios encontrados</span>
+            <span><strong>{loading || searching ? '...' : filtered.length}</strong> servicios encontrados{ranking && !searching && <small className="listing-relevance"> · ordenados por relevancia</small>}</span>
             <select aria-label="Ordenar"><option>Más relevantes</option><option>Mejor evaluados</option><option>Precio menor</option></select>
           </div>
           {loadError && <p className="data-notice">{loadError}</p>}
-          {visibleServices.map((service) => <ServiceCard service={service} key={service.id} />)}
-          {!loading && !filtered.length && <div className="empty-state"><strong>No encontramos publicaciones</strong><p>Cuando haya servicios activos en Supabase, aparecerán aquí.</p></div>}
+          {searching && <p className="data-notice" role="status">Buscando...</p>}
+          {!searching && visibleServices.map((service) => <ServiceCard service={service} key={service.id} related={Boolean(ranking) && !ranking.get(String(service.id))?.text} />)}
+          {!loading && !searching && !filtered.length && <div className="empty-state"><strong>No encontramos publicaciones</strong><p>Cuando haya servicios activos en Supabase, aparecerán aquí.</p></div>}
           {pageCount > 1 && <nav className="pagination" aria-label="Paginación de servicios"><button type="button" aria-label="Página anterior" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1}>←</button>{Array.from({ length: pageCount }, (_, index) => index + 1).map((page) => <button type="button" key={page} className={currentPage === page ? 'active' : ''} aria-current={currentPage === page ? 'page' : undefined} onClick={() => setCurrentPage(page)}>{page}</button>)}<button type="button" aria-label="Página siguiente" onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))} disabled={currentPage === pageCount}>→</button></nav>}
         </section>
       </div>

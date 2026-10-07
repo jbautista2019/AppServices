@@ -1,5 +1,6 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { supabase } from '../../utils/supabase'
 
 const CATEGORY_IMAGES = [
   'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&w=700&q=82',
@@ -51,6 +52,29 @@ export default function HomePage({ services, categories, loading }) {
   const navigate = useNavigate()
   const carouselRef = useRef(null)
   const featuredServices = useMemo(() => pickFeaturedServices(services, FEATURED_LIMIT), [services])
+  // undefined = aún no se sabe si hay sesión; null = sin sesión.
+  const [session, setSession] = useState(undefined)
+
+  useEffect(() => {
+    if (!supabase) {
+      setSession(null)
+      return
+    }
+
+    let active = true
+    supabase.auth.getSession().then(({ data }) => {
+      if (active) setSession(data.session)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (active) setSession(nextSession)
+    })
+
+    return () => {
+      active = false
+      subscription.unsubscribe()
+    }
+  }, [])
 
   function submit(event) {
     event.preventDefault()
@@ -122,14 +146,14 @@ export default function HomePage({ services, categories, loading }) {
         </div>
       </section>
 
-      <section className="home-provider-banner" id="profesionales">
+      {session === null && <section className="home-provider-banner" id="profesionales">
         <div className="home-provider-copy">
           <span className="home-provider-icon" aria-hidden="true">✣</span>
           <div><h2>¿Eres un profesional?</h2><p>Publica tus servicios y llega a más clientes en tu zona.</p><Link to="/prestadores">Regístrate ahora <span aria-hidden="true">→</span></Link></div>
         </div>
         <ul className="home-provider-benefits"><li>Crea tu perfil en minutos</li><li>Recibe solicitudes de clientes</li><li>Destaca con el sello de verificado</li><li>Gestiona tus servicios fácilmente</li></ul>
         <div className="home-provider-image" role="img" aria-label="Vista de Santiago y la cordillera" />
-      </section>
+      </section>}
     </main>
   </>
 }

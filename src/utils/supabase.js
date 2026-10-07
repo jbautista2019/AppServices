@@ -7,12 +7,16 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
 export const supabase = isSupabaseConfigured ? createClient(supabaseUrl, supabaseAnonKey, { global: { fetch: trackedFetch } }) : null
 
+// Columnas explícitas: nunca se pide services.embedding (vector de 384 números) al navegador.
+const SERVICE_COLUMNS = 'id, title, provider_id, provider_name, category, location, rating, starting_price, image_url, description, offers_local, offers_home'
+const SERVICE_DETAIL_COLUMNS = `${SERVICE_COLUMNS}, is_active, created_at`
+
 export async function getPublishedServices() {
   if (!supabase) return { data: null, error: null }
 
   const { data, error } = await supabase
     .from('services')
-    .select('*')
+    .select(SERVICE_COLUMNS)
     .eq('is_active', true)
     .order('created_at', { ascending: false })
 
@@ -36,7 +40,7 @@ export async function getServiceById(serviceId) {
 
   const { data, error } = await supabase
     .from('services')
-    .select('*')
+    .select(SERVICE_DETAIL_COLUMNS)
     .eq('id', serviceId)
     .single()
 
@@ -362,4 +366,39 @@ export async function changePassword({ email, currentPassword, newPassword }) {
     return { error: new Error('No se pudo cambiar la contraseña. Inténtalo nuevamente.') }
   }
   return { error: null }
+}
+
+// Llama a una Edge Function sin pasar por el indicador global de carga (son tareas de fondo o tienen su propio estado).
+async function callEdgeFunction(name, body) {
+  if (!supabase) return { data: null, error: new Error('Supabase no está configurado.') }
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    const response = await fetch(`${supabaseUrl}/functions/v1/${name}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: supabaseAnonKey,
+        Authorization: `Bearer ${session?.access_token || supabaseAnonKey}`,
+      },
+      body: JSON.stringify(body),
+    })
+    const data = await response.json().catch(() => null)
+    if (!response.ok) return { data: null, error: new Error(data?.error || `Error ${response.status}`) }
+    return { data, error: null }
+  } catch (error) {
+    return { data: null, error }
+  }
+}
+
+// Búsqueda híbrida (texto + semántica). Devuelve [{ id, score, text, semantic, similarity }] ordenado por relevancia.
+export async function semanticSearch(query) {
+  const { data, error } = await callEdgeFunction('semantic-search', { action: 'search', query })
+  return { data: data?.results ?? null, error }
+}
+
+// Recalcula el embedding de un servicio recién creado o editado (el trigger lo invalida al cambiar su texto).
+export function refreshServiceEmbedding(serviceId) {
+  if (!serviceId) return Promise.resolve()
+  return callEdgeFunction('semantic-search', { action: 'embed', serviceId }).catch(() => {})
 }

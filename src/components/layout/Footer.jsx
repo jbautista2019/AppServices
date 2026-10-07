@@ -11,7 +11,7 @@ export default function Footer({ categories = [] }) {
         <span className="footer-location"><span aria-hidden="true">⌖</span> Santiago, Chile</span>
       </div>
       <nav className="footer-links" aria-label="Enlaces del pie de página">
-        <div><h2>Explora</h2><Link to="/buscar">Buscar servicios</Link><Link to="/prestadores">Para profesionales</Link><Link to="/mensajes">Mensajes</Link></div>
+        <div><h2>Explora</h2><Link to="/buscar">Buscar servicios</Link><Link to="/mensajes">Mensajes</Link></div>
         {categories.length > 0 && <div><h2>Categorías</h2>{categories.slice(0, 5).map((category) => <Link key={category.name} to={`/buscar?category=${encodeURIComponent(category.name)}`}>{category.name}</Link>)}</div>}
         <div><h2>Profesionales</h2><Link to="/prestadores">Ofrece tus servicios</Link><Link to="/servicio/nuevo">Publicar un servicio</Link><Link to="/registro" state={{ backgroundLocation: location }}>Crear una cuenta</Link></div>
         <div><h2>Tu cuenta</h2><Link to="/cuenta">Iniciar sesión</Link><Link to="/perfil">Mi perfil</Link><Link to="/mis-servicios">Mis servicios</Link></div>
