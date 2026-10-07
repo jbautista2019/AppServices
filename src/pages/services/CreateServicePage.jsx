@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import CommuneInput from '../../components/common/CommuneInput'
 import ImagePicker from '../../components/services/ImagePicker'
 import { ServiceModalityField } from '../../components/services/ServiceModality'
 import { createService, isSupabaseConfigured, supabase, uploadServiceImage } from '../../utils/supabase'
@@ -120,7 +121,7 @@ export default function CreateServicePage({ categories }) {
           <option value="">Selecciona una categoría</option>
           {categories.map((category) => <option key={category.name} value={category.name}>{category.name}</option>)}
         </select></label>
-        <label>Ubicación<input required maxLength={120} value={form.location} onChange={(event) => updateField('location', event.target.value)} placeholder="Comuna o ciudad" /></label>
+        <label>Ubicación<CommuneInput required maxLength={120} value={form.location} onChange={(value) => updateField('location', value)} placeholder="Escribe tu comuna" /></label>
         <label>Precio referencial<input type="number" min="0" step="1000" value={form.startingPrice} onChange={(event) => updateField('startingPrice', event.target.value)} placeholder="Desde" /></label>
         <ImagePicker file={imageFile} onChange={setImageFile} />
         <ServiceModalityField offersLocal={form.offersLocal} offersHome={form.offersHome} onChange={(value) => setForm((current) => ({ ...current, ...value }))} />

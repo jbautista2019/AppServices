@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import CommuneInput from '../../components/common/CommuneInput'
 import ImagePicker from '../../components/services/ImagePicker'
 import Stars from '../../components/reviews/Stars'
 import { ModalityBadges, ServiceModalityField } from '../../components/services/ServiceModality'
@@ -221,7 +222,7 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
         <form className="account-form create-service-form service-form" onSubmit={handleSubmit}>
           <label className="field-wide">Título<input required maxLength={120} value={formData.title} onChange={(event) => setFormData((current) => ({ ...current, title: event.target.value }))} /></label>
           <label>Categoría<input required value={formData.category} onChange={(event) => setFormData((current) => ({ ...current, category: event.target.value }))} /></label>
-          <label>Ubicación<input required maxLength={120} value={formData.location} onChange={(event) => setFormData((current) => ({ ...current, location: event.target.value }))} /></label>
+          <label>Ubicación<CommuneInput required maxLength={120} value={formData.location} onChange={(value) => setFormData((current) => ({ ...current, location: value }))} placeholder="Escribe tu comuna" /></label>
           <label>Precio base<input type="number" min="0" step="1000" value={formData.starting_price} onChange={(event) => setFormData((current) => ({ ...current, starting_price: event.target.value }))} /></label>
           <ImagePicker currentUrl={formData.image_url} file={imageFile} removed={imageRemoved} onChange={(file) => { setImageFile(file); if (file) setImageRemoved(false) }} onRemoveCurrent={() => setImageRemoved(true)} />
           <ServiceModalityField offersLocal={formData.offers_local} offersHome={formData.offers_home} onChange={({ offersLocal, offersHome }) => setFormData((current) => ({ ...current, offers_local: offersLocal, offers_home: offersHome }))} />

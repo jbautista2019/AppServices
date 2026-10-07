@@ -331,6 +331,19 @@ export async function getProviderRatingSummary(userId) {
 
 export const MIN_PASSWORD_LENGTH = 8
 
+let communesCache = null
+
+// Lista de comunas (se consulta una sola vez). Si falla devuelve [] y el campo funciona como texto libre.
+export async function getCommunes() {
+  if (communesCache) return communesCache
+  if (!supabase) return []
+
+  const { data, error } = await supabase.from('communes').select('name').order('name', { ascending: true })
+  if (error || !data) return []
+  communesCache = data.map((commune) => commune.name)
+  return communesCache
+}
+
 // Cambia la contraseña del usuario actual. Si la cuenta ya tiene contraseña (correo), exige la actual.
 export async function changePassword({ email, currentPassword, newPassword }) {
   if (!supabase) return { error: new Error('Supabase no está configurado.') }

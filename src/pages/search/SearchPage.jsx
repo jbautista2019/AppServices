@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import CommuneInput from '../../components/common/CommuneInput'
 import ServiceCard from '../../components/services/ServiceCard'
 
 const SERVICES_PER_PAGE = 6
@@ -65,7 +66,7 @@ export default function SearchPage({ services, categories, loading, loadError, e
           </label>
           <label>
             Ubicación
-            <input className="filter-input" type="search" aria-label="Filtrar por ubicación" placeholder="Comuna o ciudad" value={location} onChange={(event) => { setLocation(event.target.value); setCurrentPage(1) }} />
+            <CommuneInput className="filter-input" aria-label="Filtrar por ubicación" placeholder="Comuna o ciudad" value={location} onChange={(value) => { setLocation(value); setCurrentPage(1) }} />
           </label>
           <label>
             Precio referencial
