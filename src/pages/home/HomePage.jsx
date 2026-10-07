@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 const CATEGORY_IMAGES = [
@@ -23,6 +23,26 @@ function categoryImage(category, index) {
   return category.image_url || CATEGORY_IMAGE_BY_NAME[normalizeName(category.name)] || CATEGORY_IMAGES[index % CATEGORY_IMAGES.length]
 }
 
+const FEATURED_LIMIT = 8
+
+// Elige los servicios mejor valorados repartiéndolos entre categorías (uno por categoría primero), para mostrar variedad de oficios.
+function pickFeaturedServices(services, limit) {
+  const byCategory = new Map()
+  for (const service of [...services].sort((first, second) => Number(second.rating) - Number(first.rating))) {
+    if (!byCategory.has(service.category)) byCategory.set(service.category, [])
+    byCategory.get(service.category).push(service)
+  }
+
+  const groups = [...byCategory.values()]
+  const picked = []
+  for (let round = 0; picked.length < limit && groups.some((group) => group[round]); round += 1) {
+    for (const group of groups) {
+      if (group[round] && picked.length < limit) picked.push(group[round])
+    }
+  }
+  return picked
+}
+
 const LOCATIONS = ['Santiago', 'Providencia', 'Las Condes', 'Ñuñoa', 'Maipú', 'La Florida']
 
 export default function HomePage({ services, categories, loading }) {
@@ -30,7 +50,7 @@ export default function HomePage({ services, categories, loading }) {
   const [location, setLocation] = useState('Santiago')
   const navigate = useNavigate()
   const carouselRef = useRef(null)
-  const featuredServices = [...services].sort((first, second) => Number(second.rating) - Number(first.rating)).slice(0, 8)
+  const featuredServices = useMemo(() => pickFeaturedServices(services, FEATURED_LIMIT), [services])
 
   function submit(event) {
     event.preventDefault()
