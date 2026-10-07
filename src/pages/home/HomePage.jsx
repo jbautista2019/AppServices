@@ -10,6 +10,19 @@ const CATEGORY_IMAGES = [
   'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=700&q=82',
 ]
 
+// Imagen por defecto según el nombre de la categoría (si no tiene una propia); evita repetir fotos al haber más de 6 categorías.
+const CATEGORY_IMAGE_BY_NAME = {
+  jardineria: 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=700&q=82',
+}
+
+function normalizeName(name) {
+  return name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+}
+
+function categoryImage(category, index) {
+  return category.image_url || CATEGORY_IMAGE_BY_NAME[normalizeName(category.name)] || CATEGORY_IMAGES[index % CATEGORY_IMAGES.length]
+}
+
 const LOCATIONS = ['Santiago', 'Providencia', 'Las Condes', 'Ñuñoa', 'Maipú', 'La Florida']
 
 export default function HomePage({ services, categories, loading }) {
@@ -50,7 +63,7 @@ export default function HomePage({ services, categories, loading }) {
             <div className="home-category-grid">
               {categories.map((category, index) => {
                 return <Link to={`/buscar?category=${encodeURIComponent(category.name)}`} className="home-category-card" key={category.name}>
-                  <img src={category.image_url || CATEGORY_IMAGES[index % CATEGORY_IMAGES.length]} alt="" loading={index > 2 ? 'lazy' : 'eager'} />
+                  <img src={categoryImage(category, index)} alt="" loading={index > 2 ? 'lazy' : 'eager'} />
                   <strong>{category.name}</strong>
                 </Link>
               })}
