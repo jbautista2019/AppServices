@@ -4,7 +4,7 @@ import { getCommunes } from '../../utils/supabase'
 const MAX_SUGGESTIONS = 8
 
 function normalize(text) {
-  return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLocaleLowerCase('es-CL').trim()
+  return text.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('es-CL').trim()
 }
 
 // Campo de texto con autocompletado de comunas de la Región Metropolitana (ignora tildes y mayúsculas).

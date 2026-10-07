@@ -16,7 +16,7 @@ const CATEGORY_IMAGE_BY_NAME = {
 }
 
 function normalizeName(name) {
-  return name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+  return name.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim()
 }
 
 function categoryImage(category, index) {
