@@ -1743,3 +1743,108 @@ button.account-module-card {
     flex-direction: column;
   }
 }
+
+.profile-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.profile-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: -1px;
+  padding: 10px 14px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: #5b6b82;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.profile-tab:hover {
+  color: var(--brand-blue);
+}
+
+.profile-tab--active {
+  border-bottom-color: var(--brand-blue);
+  color: var(--brand-blue);
+}
+
+.profile-tab small {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #e8f0fe;
+  font-size: 11px;
+}
+
+.profile-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.profile-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile-panel-heading h2 {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: 0;
+}
+
+.profile-data {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+}
+
+.profile-data dt {
+  color: #5b6b82;
+  font-size: 13px;
+}
+
+.profile-data dd {
+  margin: 2px 0 0;
+  font-weight: 600;
+}
+
+.profile-reviews-list {
+  margin: 0;
+}
+
+.profile-review-service {
+  display: inline-block;
+  margin-top: 4px;
+  color: var(--brand-blue);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.profile-review-nocomment {
+  color: #8a96a8;
+  font-style: italic;
+}
+
+.profile-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.profile-tab:focus {
+  outline: none;
+}
+
+.profile-tab:focus-visible {
+  outline: 2px solid var(--brand-blue);
+  outline-offset: -2px;
+}

@@ -1,11 +1,17 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import Stars from '../../components/reviews/Stars'
-import { changePassword, getProviderRatingSummary, isCategoryAdmin, MIN_PASSWORD_LENGTH, isSupabaseConfigured, supabase } from '../../utils/supabase'
+import { changePassword, getProviderRatingSummary, getProviderReviews, isCategoryAdmin, MIN_PASSWORD_LENGTH, isSupabaseConfigured, supabase } from '../../utils/supabase'
 
 function getFullName(user) {
   return user?.user_metadata?.full_name || user?.user_metadata?.name || ''
 }
+
+const PROFILE_TABS = [
+  { id: 'personal', label: 'Datos personales' },
+  { id: 'settings', label: 'Configuración de cuenta' },
+  { id: 'reviews', label: 'Valoraciones' },
+]
 
 export default function ProfilePage() {
   const location = useLocation()
@@ -16,6 +22,8 @@ export default function ProfilePage() {
   const [editingProfile, setEditingProfile] = useState(location.state?.profileEditing === true)
   const [rating, setRating] = useState(null)
   const [ratingError, setRatingError] = useState('')
+  const [reviews, setReviews] = useState([])
+  const [activeTab, setActiveTab] = useState(location.state?.profileTab || 'personal')
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
   const [noticeType, setNoticeType] = useState('info')
@@ -55,6 +63,7 @@ export default function ProfilePage() {
     if (!userId) {
       setIsAdmin(false)
       setRating(null)
+      setReviews([])
       return
     }
 
@@ -68,6 +77,9 @@ export default function ProfilePage() {
       if (cancelled) return
       setRating(data)
       setRatingError(error ? 'No se pudieron cargar tus valoraciones. ¿Ejecutaste supabase/reviews.sql?' : '')
+    }).catch(() => {})
+    getProviderReviews(userId).then(({ data }) => {
+      if (!cancelled) setReviews(data)
     }).catch(() => {})
 
     return () => { cancelled = true }
@@ -175,25 +187,24 @@ export default function ProfilePage() {
               <h1>{displayName}{isAdmin && <span className="profile-badge">Administrador</span>}</h1>
               <p>{session.user.email}</p>
             </div>
-            {!editingProfile && <button className="profile-edit-button" type="button" onClick={() => { setNotice(''); setEditingProfile(true) }}>Editar perfil</button>}
           </header>
 
-          <section className="profile-rating" aria-label="Valoración">
-            {rating?.count ? <>
-              <div className="profile-rating-score">
-                <strong>{rating.average.toFixed(1)}</strong>
-                <Stars value={rating.average} size={20} />
-                <small>{rating.count} {rating.count === 1 ? 'valoración' : 'valoraciones'}</small>
-              </div>
-              <ul className="profile-rating-bars">{[5, 4, 3, 2, 1].map((star) => <li key={star}>
-                <span>{star} ★</span>
-                <div><i style={{ width: `${(rating.distribution[star] / maxBucket) * 100}%` }} /></div>
-                <small>{rating.distribution[star]}</small>
-              </li>)}</ul>
-            </> : <p className="profile-rating-empty"><Stars value={0} size={20} /> {ratingError || 'Aún no tienes valoraciones. Pide a tus clientes que valoren tu servicio desde el chat.'}</p>}
-          </section>
+          <div className="profile-tabs" role="tablist" aria-label="Secciones del perfil">
+            {PROFILE_TABS.map((tab) => <button key={tab.id} type="button" role="tab" id={`profile-tab-${tab.id}`} aria-selected={activeTab === tab.id} aria-controls={`profile-panel-${tab.id}`} className={activeTab === tab.id ? 'profile-tab profile-tab--active' : 'profile-tab'} onClick={() => setActiveTab(tab.id)}>
+              {tab.label}{tab.id === 'reviews' && reviews.length > 0 && <small>{reviews.length}</small>}
+            </button>)}
+          </div>
 
-          {editingProfile && <form className="account-form profile-form" onSubmit={handleSaveProfile}>
+          {activeTab === 'personal' && <section className="profile-panel" role="tabpanel" id="profile-panel-personal" aria-labelledby="profile-tab-personal">
+            <div className="profile-panel-heading">
+              <h2>Datos personales</h2>
+              {!editingProfile && <button className="profile-edit-button" type="button" onClick={() => { setNotice(''); setEditingProfile(true) }}>Editar datos</button>}
+            </div>
+            {!editingProfile && <dl className="profile-data">
+              <div><dt>Nombre completo</dt><dd>{getFullName(session.user) || 'Sin nombre registrado'}</dd></div>
+              <div><dt>Correo electrónico</dt><dd>{session.user.email}</dd></div>
+            </dl>}
+            {editingProfile && <form className="account-form profile-form" onSubmit={handleSaveProfile}>
             <label>Nombre completo<input autoComplete="name" maxLength={100} required value={fullName} onChange={(event) => setFullName(event.target.value)} /></label>
             <label>Correo electrónico<input type="email" value={session.user.email || ''} disabled readOnly /></label>
             <div className="account-inline-actions">
@@ -201,9 +212,12 @@ export default function ProfilePage() {
               <button type="button" onClick={() => { setEditingProfile(false); setFullName(getFullName(session.user)); setNotice('') }}>Cancelar</button>
             </div>
           </form>}
-          {notice && <p className={`account-notice account-notice--${noticeType}`} role={noticeType === 'error' ? 'alert' : 'status'}>{notice}</p>}
+            {notice && <p className={`account-notice account-notice--${noticeType}`} role={noticeType === 'error' ? 'alert' : 'status'}>{notice}</p>}
+          </section>}
 
-          <section className="profile-security" aria-label="Seguridad">
+          {activeTab === 'settings' && <section className="profile-panel" role="tabpanel" id="profile-panel-settings" aria-labelledby="profile-tab-settings">
+            <div className="profile-panel-heading"><h2>Configuración de cuenta</h2></div>
+            <section className="profile-security" aria-label="Seguridad">
             <div className="profile-security-heading">
               <div><h2>Contraseña</h2><p>{hasPassword ? 'Cambia la contraseña con la que inicias sesión.' : 'Tu cuenta usa Google. Puedes crear una contraseña para entrar también con tu correo.'}</p></div>
               {!passwordOpen && <button className="profile-edit-button" type="button" onClick={() => { setPasswordNotice({ type: 'info', text: '' }); setPasswordOpen(true) }}>{hasPassword ? 'Cambiar contraseña' : 'Crear contraseña'}</button>}
@@ -218,12 +232,36 @@ export default function ProfilePage() {
               </div>
             </form>}
             {passwordNotice.text && <p className={`account-notice account-notice--${passwordNotice.type}`} role={passwordNotice.type === 'error' ? 'alert' : 'status'}>{passwordNotice.text}</p>}
-          </section>
+            </section>
 
-          <footer className="profile-card-footer">
-            {isAdmin && <Link to="/admin/categorias">Administrar categorías <span>→</span></Link>}
-            <button type="button" onClick={handleLogout}>Cerrar sesión</button>
-          </footer>
+            <footer className="profile-card-footer">
+              {isAdmin && <Link to="/admin/categorias">Administrar categorías <span>→</span></Link>}
+              <button type="button" onClick={handleLogout}>Cerrar sesión</button>
+            </footer>
+          </section>}
+
+          {activeTab === 'reviews' && <section className="profile-panel" role="tabpanel" id="profile-panel-reviews" aria-labelledby="profile-tab-reviews">
+            <div className="profile-panel-heading"><h2>Valoraciones recibidas</h2></div>
+            <section className="profile-rating" aria-label="Resumen de valoraciones">
+              {rating?.count ? <>
+                <div className="profile-rating-score">
+                  <strong>{rating.average.toFixed(1)}</strong>
+                  <Stars value={rating.average} size={20} />
+                  <small>{rating.count} {rating.count === 1 ? 'valoración' : 'valoraciones'}</small>
+                </div>
+                <ul className="profile-rating-bars">{[5, 4, 3, 2, 1].map((star) => <li key={star}>
+                  <span>{star} ★</span>
+                  <div><i style={{ width: `${(rating.distribution[star] / maxBucket) * 100}%` }} /></div>
+                  <small>{rating.distribution[star]}</small>
+                </li>)}</ul>
+              </> : <p className="profile-rating-empty"><Stars value={0} size={20} /> {ratingError || 'Aún no tienes valoraciones. Pide a tus clientes que valoren tu servicio desde el chat.'}</p>}
+            </section>
+            {reviews.length > 0 && <ul className="reviews-list profile-reviews-list">{reviews.map((review) => <li key={review.id}>
+              <div className="reviews-list-top"><strong>{review.reviewer_name}</strong><Stars value={review.rating} size={14} /><time dateTime={review.created_at}>{new Date(review.created_at).toLocaleDateString('es-CL')}</time></div>
+              <Link className="profile-review-service" to={`/servicio/${review.service_id}`}>{review.service_title}</Link>
+              {review.comment ? <p>{review.comment}</p> : <p className="profile-review-nocomment">Sin comentario.</p>}
+            </li>)}</ul>}
+          </section>}
         </div>}
       </section>
     </main>

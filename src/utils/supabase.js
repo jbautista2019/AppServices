@@ -333,6 +333,28 @@ export async function getProviderRatingSummary(userId) {
   return { data: { average: total / data.length, count: data.length, distribution }, error: null }
 }
 
+// Valoraciones recibidas en los servicios de un prestador, con quién las dejó, su comentario y el servicio valorado.
+export async function getProviderReviews(userId) {
+  if (!supabase || !userId) return { data: [], error: null }
+
+  const { data: ownServices, error: servicesError } = await supabase
+    .from('services')
+    .select('id, title')
+    .eq('provider_id', userId)
+  if (servicesError) return { data: [], error: servicesError }
+  if (!ownServices?.length) return { data: [], error: null }
+
+  const titles = new Map(ownServices.map((service) => [service.id, service.title]))
+  const { data, error } = await supabase
+    .from('service_reviews')
+    .select('id, service_id, reviewer_name, rating, comment, created_at')
+    .in('service_id', ownServices.map((service) => service.id))
+    .order('created_at', { ascending: false })
+
+  if (error) return { data: [], error }
+  return { data: data.map((review) => ({ ...review, service_title: titles.get(review.service_id) || 'Servicio' })), error: null }
+}
+
 export const MIN_PASSWORD_LENGTH = 8
 
 let communesCache = null
