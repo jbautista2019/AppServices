@@ -435,3 +435,18 @@ select {
     width: 100%;
   }
 }
+/* Pie de página siempre al fondo cuando el contenido es corto. */
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+#root > main {
+  flex: 1 0 auto;
+}
+
+#root > .site-footer {
+  margin-top: auto;
+}
