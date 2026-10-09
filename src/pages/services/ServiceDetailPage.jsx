@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import CommuneInput from '../../components/common/CommuneInput'
+import GalleryPicker from '../../components/services/GalleryPicker'
 import ImagePicker from '../../components/services/ImagePicker'
 import Stars from '../../components/reviews/Stars'
 import ReportServiceButton from '../../components/services/ReportServiceButton'
@@ -31,6 +32,13 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
   })
   const [imageFile, setImageFile] = useState(null)
   const [imageRemoved, setImageRemoved] = useState(false)
+  const [galleryUrls, setGalleryUrls] = useState([])
+  const [galleryFiles, setGalleryFiles] = useState([])
+  const [activeImage, setActiveImage] = useState(0)
+
+  useEffect(() => {
+    setActiveImage(0)
+  }, [id])
 
   const listedService = services.find((item) => String(item.id) === id)
   const [fetchedService, setFetchedService] = useState(null)
@@ -78,6 +86,7 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
 
       if (!error && data) {
         setDetailService(data)
+        setGalleryUrls(data.gallery_urls || [])
         setFormData({
           title: data.title || '',
           category: data.category || '',
@@ -167,6 +176,16 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
         imageUrl = url
       }
 
+      const uploadedGallery = []
+      for (const file of galleryFiles) {
+        const { url, error: uploadError } = await uploadServiceImage(file, session.user.id)
+        if (uploadError) throw uploadError
+        uploadedGallery.push(url)
+      }
+      const nextGallery = [...galleryUrls, ...uploadedGallery]
+      const originalGallery = detailService.gallery_urls || []
+      const galleryChanged = nextGallery.length !== originalGallery.length || nextGallery.some((url, index) => url !== originalGallery[index])
+
       const payload = {
         title: formData.title.trim(),
         category: formData.category.trim(),
@@ -176,6 +195,8 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
         offers_home: formData.offers_home,
         description: formData.description.trim(),
         image_url: imageUrl,
+        // Solo se envía si cambió: así guardar sigue funcionando aunque aún no exista la columna.
+        ...(galleryChanged ? { gallery_urls: nextGallery } : {}),
       }
 
       if (!payload.offers_local && !payload.offers_home) {
@@ -198,6 +219,9 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
       setSaving(false)
     }
   }
+
+  const galleryImages = [service?.image_url, ...(service?.gallery_urls || [])].filter(Boolean)
+  const shownImage = Math.min(activeImage, Math.max(galleryImages.length - 1, 0))
 
   if (loading || detailLoading || fetchedLoading) return <main className="detail-page"><p>Cargando publicación...</p></main>
 
@@ -227,6 +251,7 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
           <label>Ubicación<CommuneInput required maxLength={120} value={formData.location} onChange={(value) => setFormData((current) => ({ ...current, location: value }))} placeholder="Escribe tu comuna" /></label>
           <label>Precio base<input type="number" min="0" step="1000" value={formData.starting_price} onChange={(event) => setFormData((current) => ({ ...current, starting_price: event.target.value }))} /></label>
           <ImagePicker currentUrl={formData.image_url} file={imageFile} removed={imageRemoved} onChange={(file) => { setImageFile(file); if (file) setImageRemoved(false) }} onRemoveCurrent={() => setImageRemoved(true)} />
+          <GalleryPicker urls={galleryUrls} files={galleryFiles} onUrlsChange={setGalleryUrls} onFilesChange={setGalleryFiles} />
           <ServiceModalityField offersLocal={formData.offers_local} offersHome={formData.offers_home} onChange={({ offersLocal, offersHome }) => setFormData((current) => ({ ...current, offers_local: offersLocal, offers_home: offersHome }))} />
           <label className="field-wide">Descripción<textarea rows="4" required maxLength={4000} value={formData.description} onChange={(event) => setFormData((current) => ({ ...current, description: event.target.value }))} /></label>
           {notice && <p className={`account-notice account-notice--${noticeType} field-wide`} role={noticeType === 'error' ? 'alert' : 'status'}>{notice}</p>}
@@ -241,7 +266,7 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
 
   if (!service) return <main className="detail-page"><Link to="/buscar" className="back-link">← Volver a resultados</Link><p>{loadError || 'Esta publicación no está disponible.'}</p></main>
 
-  return <main className="detail-page"><nav className="breadcrumb" aria-label="Ruta de navegación"><Link to="/">Inicio</Link><span aria-hidden="true">›</span><Link to={`/buscar?category=${encodeURIComponent(service.category)}`}>{service.category}</Link><span aria-hidden="true">›</span><span aria-current="page">{service.title}</span></nav><div className="detail-grid"><div>{service.image_url && <img className="detail-image" src={service.image_url} alt={service.title} />}</div><section className="detail-copy"><span className="category-label">{service.category}</span><h1>{service.title}</h1><p className="detail-provider">{service.provider_name} <span className="verified">✓</span></p><div className="detail-rating"><strong>★ {Number(service.rating).toFixed(1)}{reviews.length > 0 && <small> ({reviews.length})</small>}</strong><span>⌖ {service.location}</span><ModalityBadges service={service} /></div><hr /><h3>Sobre este servicio</h3><p className="description">{service.description}</p>{!ownsPublishedService && <div className="contact-box"><div><strong>¿Te interesa este servicio?</strong><small>Responde normalmente en menos de una hora.</small>{notice && <small className="contact-notice" role="alert">{notice}</small>}</div><button className="dark-button" type="button" disabled={saving} onClick={handleContact}>{saving ? 'Abriendo chat...' : 'Contactar'} <span aria-hidden="true">→</span></button></div>}{!ownsPublishedService && <ReportServiceButton serviceId={service.id} loggedIn={Boolean(session)} onRequireLogin={() => navigate('/cuenta', { state: { backgroundLocation: location } })} />}</section></div>
+  return <main className="detail-page"><nav className="breadcrumb" aria-label="Ruta de navegación"><Link to="/">Inicio</Link><span aria-hidden="true">›</span><Link to={`/buscar?category=${encodeURIComponent(service.category)}`}>{service.category}</Link><span aria-hidden="true">›</span><span aria-current="page">{service.title}</span></nav><div className="detail-grid"><div>{galleryImages.length > 0 && <img className="detail-image" src={galleryImages[shownImage]} alt={service.title} />}{galleryImages.length > 1 && <div className="detail-gallery" role="list" aria-label="Fotos de la publicación">{galleryImages.map((url, index) => <button key={url} type="button" role="listitem" className={index === shownImage ? 'is-active' : ''} aria-label={`Ver foto ${index + 1} de ${galleryImages.length}`} aria-current={index === shownImage} onClick={() => setActiveImage(index)}><img src={url} alt="" /></button>)}</div>}</div><section className="detail-copy"><span className="category-label">{service.category}</span><h1>{service.title}</h1><p className="detail-provider">{service.provider_name} <span className="verified">✓</span></p><div className="detail-rating"><strong>★ {Number(service.rating).toFixed(1)}{reviews.length > 0 && <small> ({reviews.length})</small>}</strong><span>⌖ {service.location}</span><ModalityBadges service={service} /></div><hr /><h3>Sobre este servicio</h3><p className="description">{service.description}</p>{!ownsPublishedService && <div className="contact-box"><div><strong>¿Te interesa este servicio?</strong><small>Responde normalmente en menos de una hora.</small>{notice && <small className="contact-notice" role="alert">{notice}</small>}</div><button className="dark-button" type="button" disabled={saving} onClick={handleContact}>{saving ? 'Abriendo chat...' : 'Contactar'} <span aria-hidden="true">→</span></button></div>}{!ownsPublishedService && <ReportServiceButton serviceId={service.id} loggedIn={Boolean(session)} onRequireLogin={() => navigate('/cuenta', { state: { backgroundLocation: location } })} />}</section></div>
     <section className="reviews-section" aria-labelledby="reviews-title">
       <h2 id="reviews-title">Valoraciones{reviews.length > 0 && <small> · {reviews.length}</small>}</h2>
       {reviews.length ? <ul className="reviews-list">{reviews.map((review) => <li key={review.id}>

@@ -11,16 +11,19 @@ export const supabase = isSupabaseConfigured ? createClient(supabaseUrl, supabas
 const SERVICE_COLUMNS = 'id, title, provider_id, provider_name, category, location, rating, starting_price, image_url, description, offers_local, offers_home'
 const SERVICE_DETAIL_COLUMNS = `${SERVICE_COLUMNS}, is_active, created_at`
 
+export const SERVICE_GALLERY_MAX = 4
+
+// Si aún no se ejecutó supabase/service-gallery.sql la columna no existe: se repite la consulta sin ella.
+const isMissingGalleryColumn = (error) => error?.code === '42703' || /gallery_urls/.test(error?.message || '')
+
 export async function getPublishedServices() {
   if (!supabase) return { data: null, error: null }
 
-  const { data, error } = await supabase
-    .from('services')
-    .select(SERVICE_COLUMNS)
-    .eq('is_active', true)
-    .order('created_at', { ascending: false })
+  const query = (columns) => supabase.from('services').select(columns).eq('is_active', true).order('created_at', { ascending: false })
+  const result = await query(`${SERVICE_COLUMNS}, gallery_urls`)
+  if (isMissingGalleryColumn(result.error)) return query(SERVICE_COLUMNS)
 
-  return { data, error }
+  return result
 }
 
 export async function getUserServices(userId) {
@@ -39,13 +42,11 @@ export async function getUserServices(userId) {
 export async function getServiceById(serviceId) {
   if (!supabase || !serviceId) return { data: null, error: null }
 
-  const { data, error } = await supabase
-    .from('services')
-    .select(SERVICE_DETAIL_COLUMNS)
-    .eq('id', serviceId)
-    .single()
+  const query = (columns) => supabase.from('services').select(columns).eq('id', serviceId).single()
+  const result = await query(`${SERVICE_DETAIL_COLUMNS}, gallery_urls`)
+  if (isMissingGalleryColumn(result.error)) return query(SERVICE_DETAIL_COLUMNS)
 
-  return { data, error }
+  return result
 }
 
 export async function createService(service) {

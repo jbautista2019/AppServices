@@ -2060,3 +2060,99 @@ button.account-module-card {
     align-items: stretch;
   }
 }
+
+.detail-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.detail-gallery button {
+  width: 72px;
+  height: 60px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  background: none;
+  overflow: hidden;
+  cursor: pointer;
+  opacity: 0.65;
+}
+
+.detail-gallery button:hover,
+.detail-gallery button.is-active {
+  opacity: 1;
+}
+
+.detail-gallery button.is-active {
+  border-color: var(--brand-blue);
+}
+
+.detail-gallery img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gallery-picker {
+  display: grid;
+  gap: 8px;
+}
+
+.gallery-picker small {
+  color: var(--muted);
+}
+
+.gallery-picker-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gallery-picker-list li {
+  position: relative;
+  width: 96px;
+  height: 80px;
+}
+
+.gallery-picker-list img {
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.gallery-picker-list li > button:not(.gallery-picker-add) {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #0d2850;
+  color: white;
+  font-size: 14px;
+  line-height: 22px;
+  cursor: pointer;
+}
+
+.gallery-picker-add {
+  width: 100%;
+  height: 100%;
+  border: 1px dashed #9aa5b5;
+  border-radius: 4px;
+  background: white;
+  color: var(--brand-blue);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import CommuneInput from '../../components/common/CommuneInput'
+import GalleryPicker from '../../components/services/GalleryPicker'
 import ImagePicker from '../../components/services/ImagePicker'
 import { ServiceModalityField } from '../../components/services/ServiceModality'
 import { createService, isSupabaseConfigured, refreshServiceEmbedding, supabase, uploadServiceImage } from '../../utils/supabase'
@@ -22,6 +23,7 @@ export default function CreateServicePage({ categories }) {
     offersHome: false,
   })
   const [imageFile, setImageFile] = useState(null)
+  const [galleryFiles, setGalleryFiles] = useState([])
 
   useEffect(() => {
     if (!supabase) {
@@ -77,6 +79,17 @@ export default function CreateServicePage({ categories }) {
       imageUrl = url
     }
 
+    const galleryUrls = []
+    for (const file of galleryFiles) {
+      const { url, error: uploadError } = await uploadServiceImage(file, session.user.id)
+      if (uploadError) {
+        setError(uploadError.message)
+        setSaving(false)
+        return
+      }
+      galleryUrls.push(url)
+    }
+
     const { data: created, error: saveError } = await createService({
       provider_id: session.user.id,
       provider_name: providerName,
@@ -90,6 +103,8 @@ export default function CreateServicePage({ categories }) {
       offers_local: form.offersLocal,
       offers_home: form.offersHome,
       is_active: true,
+      // Solo se envía si hay fotos: así publicar sigue funcionando aunque aún no exista la columna.
+      ...(galleryUrls.length ? { gallery_urls: galleryUrls } : {}),
     })
 
     if (saveError) {
@@ -125,6 +140,7 @@ export default function CreateServicePage({ categories }) {
         <label>Ubicación<CommuneInput required maxLength={120} value={form.location} onChange={(value) => updateField('location', value)} placeholder="Escribe tu comuna" /></label>
         <label>Precio referencial<input type="number" min="0" step="1000" value={form.startingPrice} onChange={(event) => updateField('startingPrice', event.target.value)} placeholder="Desde" /></label>
         <ImagePicker file={imageFile} onChange={setImageFile} />
+        <GalleryPicker files={galleryFiles} onFilesChange={setGalleryFiles} />
         <ServiceModalityField offersLocal={form.offersLocal} offersHome={form.offersHome} onChange={(value) => setForm((current) => ({ ...current, ...value }))} />
         <label className="field-wide">Descripción<textarea required maxLength={4000} rows={4} value={form.description} onChange={(event) => updateField('description', event.target.value)} placeholder="Describe el servicio, experiencia y qué incluye." /></label>
         {error && <p className="create-service-error field-wide" role="alert">{error}</p>}
