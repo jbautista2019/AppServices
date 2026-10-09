@@ -283,3 +283,56 @@ begin
   end if;
 end
 $$;
+
+-- ---------------------------------------------------------------------------
+-- Listado de todas las publicaciones para el administrador (incluye pausadas y ocultas)
+-- ---------------------------------------------------------------------------
+
+drop function if exists public.admin_list_services();
+create or replace function public.admin_list_services()
+returns table (
+  id bigint,
+  title text,
+  provider_id uuid,
+  provider_name text,
+  category text,
+  location text,
+  is_active boolean,
+  hidden_by_admin boolean,
+  created_at timestamptz,
+  pending_reports bigint,
+  total_reports bigint
+)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+begin
+  if not (select public.is_category_admin()) then
+    raise exception 'No tienes permiso para ver las publicaciones.';
+  end if;
+
+  return query
+  select
+    s.id,
+    s.title,
+    s.provider_id,
+    s.provider_name,
+    s.category,
+    s.location,
+    s.is_active,
+    s.hidden_by_admin,
+    s.created_at,
+    (select count(*) from public.service_reports r where r.service_id = s.id and r.status = 'pending'),
+    (select count(*) from public.service_reports r where r.service_id = s.id)
+  from public.services s
+  order by s.created_at desc
+  limit 500;
+end
+$$;
+
+revoke all on function public.admin_list_services() from public, anon;
+grant execute on function public.admin_list_services() to authenticated;
+
+notify pgrst, 'reload schema';

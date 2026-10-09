@@ -259,6 +259,7 @@ export default function Header() {
               <Link to="/perfil" state={{ profileSection: 'profile', profileEditing: true }} onClick={() => setProfileMenuOpen(false)}>Mi perfil</Link>
               {categoryAdminChecked && canManageCategories ? <>
                 <Link to="/admin/categorias" onClick={() => setProfileMenuOpen(false)}>Administrar categorías</Link>
+                <Link to="/admin/publicaciones" onClick={() => setProfileMenuOpen(false)}>Administrar publicaciones</Link>
                 <Link to="/admin/reportes" onClick={() => setProfileMenuOpen(false)}>Reportes de publicaciones</Link>
               </> : categoryAdminChecked && <>
                 <Link to="/mis-servicios" onClick={() => setProfileMenuOpen(false)}>Mis servicios</Link>

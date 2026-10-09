@@ -96,6 +96,10 @@ Necesitas dos cuentas con sesión, **A** (profesional) y **B** (cliente), y una 
 | 15 | admin | **Mostrar publicación** | A recibe «volvió a estar visible» y puede pausar/reactivar de nuevo |
 | 16 | A | Eliminar la publicación | El reporte sigue en la pantalla del admin como «Eliminada por su dueño» |
 | 17 | usuario sin permisos | Abrir `/admin/reportes` | «Esta cuenta no tiene permiso» |
+| 18 | admin | Abrir **Administrar publicaciones** y buscar por título, profesional o comuna | Aparecen todas, también las pausadas y ocultas, con filtros y contador de reportes |
+| 19 | A | Subir una publicación con 3 fotos adicionales | El detalle muestra la portada y miniaturas que cambian la foto principal |
+| 20 | A | En Perfil > Datos personales, agregar teléfono y descripción | `/profesional/<id>` los muestra con el botón de WhatsApp; el detalle enlaza al perfil |
+| 21 | B | En la búsqueda, ordenar por precio y por mejor evaluados | El listado cambia de orden de forma coherente |
 
 ### Estructura del frontend
 

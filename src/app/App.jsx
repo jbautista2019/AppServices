@@ -8,6 +8,7 @@ import MyServicesRoute from '../pages/account/MyServicesRoute'
 import ProfilePage from '../pages/account/ProfilePage'
 import RegistrationModal from '../pages/account/RegistrationModal'
 import AdminReportsPage from '../pages/admin/AdminReportsPage'
+import AdminServicesPage from '../pages/admin/AdminServicesPage'
 import CategoriesAdminPage from '../pages/admin/CategoriesAdminPage'
 import HomePage from '../pages/home/HomePage'
 import MessagesPage from '../pages/messages/MessagesPage'
@@ -71,6 +72,7 @@ export default function App() {
       <Route path="/mensajes" element={<MessagesPage />} />
       <Route path="/admin/categorias" element={<CategoriesAdminPage />} />
       <Route path="/admin/reportes" element={<AdminReportsPage />} />
+      <Route path="/admin/publicaciones" element={<AdminServicesPage />} />
     </Routes>
     {loginOpen && <AccountPage />}
     {registrationOpen && <RegistrationModal onClose={() => navigate(backgroundLocation ? `${backgroundLocation.pathname}${backgroundLocation.search}${backgroundLocation.hash}` : '/', { replace: true })} />}

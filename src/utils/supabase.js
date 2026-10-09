@@ -430,6 +430,13 @@ export async function markPlatformNotificationsRead(ids) {
 
 export const REPORTS_CHANGED_EVENT = 'service-reports-changed'
 
+export async function listAllServices() {
+  if (!supabase) return { data: [], error: new Error('Supabase no está configurado.') }
+
+  const { data, error } = await supabase.rpc('admin_list_services')
+  return { data: data || [], error: friendlyReportAdminError(error) }
+}
+
 export async function setReportStatus(reportId, status) {
   if (!supabase) return { error: new Error('Supabase no está configurado.') }
 

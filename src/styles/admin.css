@@ -2239,3 +2239,30 @@ button.account-module-card {
     flex-direction: column;
   }
 }
+
+.admin-services-search {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.admin-services-link {
+  color: var(--brand-blue);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.admin-service-status {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-service-status--active { background: #def5e5; color: #1d6b3a; }
+.admin-service-status--paused { background: #fff3d6; color: #8a5a00; }
+.admin-service-status--hidden { background: #fde3e0; color: #b3261e; }
