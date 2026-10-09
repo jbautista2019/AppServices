@@ -406,7 +406,7 @@ select {
     flex-direction: column;
   }
 
-  .service-card > img {
+  .service-card > .service-card-image {
     width: 100%;
     height: 160px;
   }
