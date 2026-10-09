@@ -83,3 +83,8 @@
 .service-card-image { display: block; flex: none; overflow: hidden; }
 .service-card-image img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .25s ease; }
 .service-card-image:hover img { transform: scale(1.04); }
+
+/* Página de búsqueda: 4 columnas cuando hay ancho suficiente (listado ≥ ~910px); con menos ancho se mantienen 3, 2 y 1 */
+.results-page:not(.results-page--embedded) { max-width: 1400px; }
+.listing-grid--4 .card-bottom { flex-wrap: wrap; gap: 6px 10px; }
+@media (min-width: 1270px) { .listing-grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
