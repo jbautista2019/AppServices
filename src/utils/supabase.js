@@ -50,30 +50,82 @@ export async function removeFavorite(userId, serviceId) {
   return { error: friendlyFavoritesError(error) }
 }
 
-// Si aún no se ejecutó supabase/service-gallery.sql la columna no existe: se repite la consulta sin ella.
-const isMissingGalleryColumn = (error) => error?.code === '42703' || /gallery_urls/.test(error?.message || '')
+// Planes premium y promociones. Sin el script SQL las funciones explican qué falta ejecutar.
+function friendlyPremiumError(error) {
+  if (!error) return null
+  if (error.code === 'PGRST202' || error.code === 'PGRST205' || error.code === '42P01' || /schema cache/i.test(error.message || '')) {
+    return new Error('Falta habilitar los planes premium en Supabase. Ejecuta supabase/premium-plans.sql.')
+  }
+  return new Error(error.message || 'No se pudo completar la operación. Inténtalo nuevamente.')
+}
+
+export async function getPremiumPlans() {
+  if (!supabase) return { data: [], error: null }
+
+  const { data, error } = await supabase
+    .from('premium_plans')
+    .select('id, name, description, days, price_clp, features, highlighted')
+    .order('sort_order', { ascending: true })
+  return { data: data || [], error: friendlyPremiumError(error) }
+}
+
+export async function requestPromotion(serviceId, planId) {
+  if (!supabase) return { data: null, error: new Error('Supabase no está configurado.') }
+
+  const { data, error } = await supabase.rpc('request_promotion', { p_service_id: serviceId, p_plan_id: planId })
+  return { data, error: friendlyPremiumError(error) }
+}
+
+export async function getMyPromotions() {
+  if (!supabase) return { data: [], error: null }
+
+  const { data, error } = await supabase
+    .from('service_promotions')
+    .select('id, service_id, service_title, plan_name, price_clp, days, status, requested_at, starts_at, ends_at')
+    .order('requested_at', { ascending: false })
+  return { data: data || [], error: friendlyPremiumError(error) }
+}
+
+export async function listPromotions() {
+  if (!supabase) return { data: [], error: new Error('Supabase no está configurado.') }
+
+  const { data, error } = await supabase.rpc('admin_list_promotions')
+  return { data: data || [], error: friendlyPremiumError(error) }
+}
+
+export async function setPromotionStatus(promotionId, status) {
+  if (!supabase) return { error: new Error('Supabase no está configurado.') }
+
+  const { error } = await supabase.rpc('admin_set_promotion_status', { p_promotion_id: promotionId, p_status: status })
+  return { error: friendlyPremiumError(error) }
+}
+
+// Columnas que se agregan con scripts SQL opcionales (galería, premium, moderación). Si alguno aún no se ejecutó, esa columna no existe
+// y Postgres responde 42703 con su nombre: se quita solo esa y se repite la consulta, así la app funciona con o sin cada script.
+const OPTIONAL_SERVICE_COLUMNS = ['gallery_urls', 'premium_until']
+
+async function selectWithOptionalColumns(baseColumns, run, optional = OPTIONAL_SERVICE_COLUMNS) {
+  let remaining = [...optional]
+  for (;;) {
+    const result = await run([baseColumns, ...remaining].join(', '))
+    if (result.error?.code !== '42703') return result
+    const missing = remaining.find((name) => (result.error.message || '').includes(name))
+    if (!missing) return result
+    remaining = remaining.filter((name) => name !== missing)
+  }
+}
 
 export async function getPublishedServices() {
   if (!supabase) return { data: null, error: null }
 
-  const query = (columns) => supabase.from('services').select(columns).eq('is_active', true).order('created_at', { ascending: false })
-  const result = await query(`${SERVICE_COLUMNS}, gallery_urls`)
-  if (isMissingGalleryColumn(result.error)) return query(SERVICE_COLUMNS)
-
-  return result
+  return selectWithOptionalColumns(SERVICE_COLUMNS, (columns) => supabase.from('services').select(columns).eq('is_active', true).order('created_at', { ascending: false }))
 }
 
 export async function getUserServices(userId) {
   if (!supabase || !userId) return { data: [], error: null }
 
   const columns = 'id, title, provider_name, category, location, rating, starting_price, image_url, description, is_active, created_at'
-  const query = (select) => supabase.from('services').select(select).eq('provider_id', userId).order('created_at', { ascending: false })
-
-  const { data, error } = await query(`${columns}, hidden_by_admin`)
-  // Si aún no se ejecutó supabase/service-reports.sql, la columna no existe: se consulta sin ella.
-  if (error?.code === '42703' || /hidden_by_admin/.test(error?.message || '')) return query(columns)
-
-  return { data, error }
+  return selectWithOptionalColumns(columns, (select) => supabase.from('services').select(select).eq('provider_id', userId).order('created_at', { ascending: false }), ['hidden_by_admin', 'premium_until'])
 }
 
 // Perfil público del profesional (descripción y teléfono). Si la tabla aún no existe se trata como «sin perfil».
@@ -105,21 +157,13 @@ export async function saveProviderProfile(userId, { bio, phone }) {
 export async function getProviderServices(userId) {
   if (!supabase || !userId) return { data: [], error: null }
 
-  const query = (columns) => supabase.from('services').select(columns).eq('provider_id', userId).eq('is_active', true).order('created_at', { ascending: false })
-  const result = await query(`${SERVICE_COLUMNS}, gallery_urls`)
-  if (isMissingGalleryColumn(result.error)) return query(SERVICE_COLUMNS)
-
-  return result
+  return selectWithOptionalColumns(SERVICE_COLUMNS, (columns) => supabase.from('services').select(columns).eq('provider_id', userId).eq('is_active', true).order('created_at', { ascending: false }))
 }
 
 export async function getServiceById(serviceId) {
   if (!supabase || !serviceId) return { data: null, error: null }
 
-  const query = (columns) => supabase.from('services').select(columns).eq('id', serviceId).single()
-  const result = await query(`${SERVICE_DETAIL_COLUMNS}, gallery_urls`)
-  if (isMissingGalleryColumn(result.error)) return query(SERVICE_DETAIL_COLUMNS)
-
-  return result
+  return selectWithOptionalColumns(SERVICE_DETAIL_COLUMNS, (columns) => supabase.from('services').select(columns).eq('id', serviceId).single())
 }
 
 export async function createService(service) {

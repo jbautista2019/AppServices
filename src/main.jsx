@@ -7,6 +7,7 @@ import './styles/base.css'
 import './styles/connection.css'
 import './styles/home.css'
 import './styles/messaging.css'
+import './styles/plans.css'
 import './styles/responsive.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(

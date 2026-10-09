@@ -60,6 +60,14 @@ npx --yes supabase functions deploy semantic-search
 
 Para ampliar el vocabulario agrega filas a `public.search_synonyms` (`term` es la cabeza del grupo y `synonym` cada palabra equivalente, en minúsculas y sin tildes). Los umbrales se ajustan al inicio de `search_services` (`p_min_similarity`, `semantic_margin`, pesos de texto/semántica).
 
+### Planes premium
+
+La página `/planes` ofrece planes para destacar una publicación en la portada («Profesionales más buscados»), donde las publicaciones premium salen primero y con la insignia ★ Premium. Los lugares premium rotan cada día y ocupan como máximo el 75% de la portada.
+
+- **No hay pasarela de pago todavía.** El profesional solicita un plan para una de sus publicaciones activas; un administrador lo revisa, coordina el pago por fuera de la plataforma y lo activa en `/admin/promociones`. Al activar se fija `services.premium_until`; al vencer no hace falta ningún proceso. Para cobrar dentro de la app habría que integrar un medio de pago (Flow, Mercado Pago, Stripe, etc.).
+- **Los precios son de ejemplo.** Se cambian editando la tabla `premium_plans` en Supabase (nombre, días, precio, características); también se pueden agregar o desactivar planes (`is_active`).
+- El profesional no puede ponerse premium solo: `premium_until` está protegido por el mismo trigger que la moderación y solo lo cambian las funciones de administrador.
+
 ### Orden de los scripts SQL
 
 Todos son idempotentes y se ejecutan en **SQL Editor**. El orden importa porque unos dependen de las tablas de otros:
@@ -71,7 +79,8 @@ Todos son idempotentes y se ejecutan en **SQL Editor**. El orden importa porque 
 5. `supabase/reviews.sql` (valoraciones; usa `conversations` y `messages`)
 6. `supabase/user-notifications.sql` (notificaciones de la plataforma)
 7. `supabase/service-reports.sql` (reportes y moderación; usa `user_notifications` y `category_admins`)
-8. `supabase/semantic-search.sql` (búsqueda híbrida, opcional)
+8. `supabase/premium-plans.sql` (planes premium y promociones; usa `user_notifications`, `category_admins` y el trigger de `service-reports.sql`)
+9. `supabase/semantic-search.sql` (búsqueda híbrida, opcional)
 
 ### Lista de prueba del flujo completo
 
@@ -102,6 +111,10 @@ Necesitas dos cuentas con sesión, **A** (profesional) y **B** (cliente), y una 
 | 21 | B | En la búsqueda, ordenar por precio y por mejor evaluados | El listado cambia de orden de forma coherente |
 | 22 | B | Tocar el ♡ de dos servicios y abrir el corazón del encabezado | Ambos aparecen (el último guardado primero), con contador; la × los quita y el ♡ de la tarjeta se desmarca |
 | 23 | visitante | Tocar el ♡ de una tarjeta sin sesión | Se abre el inicio de sesión |
+| 24 | visitante | Abrir **Planes** (encabezado o pie) | Ve Gratis y los planes premium con su precio; «Elegir este plan» lleva a iniciar sesión |
+| 25 | A | En **Mis servicios** tocar «★ Promocionar», elegir un plan y la publicación | Aparece «Solicitud enviada» y la solicitud figura como pendiente en «Mis solicitudes»; los administradores reciben una notificación |
+| 26 | admin | En **Promociones premium** pulsar «Activar plan» | A recibe una notificación; su publicación sale primera en la portada con ★ Premium y en «Mis servicios» figura «Premium hasta el …» |
+| 27 | admin | Pulsar «Finalizar plan» | La publicación deja de salir destacada en la portada |
 
 ### Estructura del frontend
 

@@ -229,6 +229,7 @@ export default function Header({ services = [], categories = [] }) {
       <nav aria-label="Navegación principal">
         <Link className={isActive('/') ? 'header-nav-active' : ''} to="/">Inicio</Link>
         <Link className={isActive('/buscar') ? 'header-nav-active' : ''} to="/buscar">Categorías</Link>
+        <Link className={isActive('/planes') ? 'header-nav-active' : ''} to="/planes">Planes</Link>
       </nav>
       <div className="header-actions">
         {session && <div className="header-notifications-wrap header-favorites-wrap" ref={favoritesRef}>
@@ -296,6 +297,7 @@ export default function Header({ services = [], categories = [] }) {
               {categoryAdminChecked && canManageCategories ? <>
                 <Link to="/admin/categorias" onClick={() => setProfileMenuOpen(false)}>Administrar categorías</Link>
                 <Link to="/admin/publicaciones" onClick={() => setProfileMenuOpen(false)}>Administrar publicaciones</Link>
+                <Link to="/admin/promociones" onClick={() => setProfileMenuOpen(false)}>Promociones premium</Link>
                 <Link to="/admin/reportes" onClick={() => setProfileMenuOpen(false)}>Reportes de publicaciones</Link>
               </> : categoryAdminChecked && <>
                 <Link to="/mis-servicios" onClick={() => setProfileMenuOpen(false)}>Mis servicios</Link>

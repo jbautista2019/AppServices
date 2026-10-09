@@ -9,10 +9,12 @@ import MyServicesRoute from '../pages/account/MyServicesRoute'
 import ProfilePage from '../pages/account/ProfilePage'
 import RegistrationModal from '../pages/account/RegistrationModal'
 import AdminReportsPage from '../pages/admin/AdminReportsPage'
+import AdminPromotionsPage from '../pages/admin/AdminPromotionsPage'
 import AdminServicesPage from '../pages/admin/AdminServicesPage'
 import CategoriesAdminPage from '../pages/admin/CategoriesAdminPage'
 import HomePage from '../pages/home/HomePage'
 import MessagesPage from '../pages/messages/MessagesPage'
+import PlansPage from '../pages/plans/PlansPage'
 import ProvidersPage from '../pages/providers/ProvidersPage'
 import ProviderProfilePage from '../pages/providers/ProviderProfilePage'
 import SearchPage from '../pages/search/SearchPage'
@@ -74,6 +76,8 @@ export default function App() {
       <Route path="/admin/categorias" element={<CategoriesAdminPage />} />
       <Route path="/admin/reportes" element={<AdminReportsPage />} />
       <Route path="/admin/publicaciones" element={<AdminServicesPage />} />
+      <Route path="/admin/promociones" element={<AdminPromotionsPage />} />
+      <Route path="/planes" element={<PlansPage />} />
     </Routes>
     {loginOpen && <AccountPage />}
     {registrationOpen && <RegistrationModal onClose={() => navigate(backgroundLocation ? `${backgroundLocation.pathname}${backgroundLocation.search}${backgroundLocation.hash}` : '/', { replace: true })} />}

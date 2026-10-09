@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import SearchAutocomplete from '../../components/common/SearchAutocomplete'
+import { isPremium, pickFeaturedServices } from '../../utils/featured'
 import { addSearchHistory } from '../../utils/searchHistory'
 import { supabase } from '../../utils/supabase'
 
@@ -27,24 +28,6 @@ function categoryImage(category, index) {
 }
 
 const FEATURED_LIMIT = 8
-
-// Elige los servicios mejor valorados repartiéndolos entre categorías (uno por categoría primero), para mostrar variedad de oficios.
-function pickFeaturedServices(services, limit) {
-  const byCategory = new Map()
-  for (const service of [...services].sort((first, second) => Number(second.rating) - Number(first.rating))) {
-    if (!byCategory.has(service.category)) byCategory.set(service.category, [])
-    byCategory.get(service.category).push(service)
-  }
-
-  const groups = [...byCategory.values()]
-  const picked = []
-  for (let round = 0; picked.length < limit && groups.some((group) => group[round]); round += 1) {
-    for (const group of groups) {
-      if (group[round] && picked.length < limit) picked.push(group[round])
-    }
-  }
-  return picked
-}
 
 const LOCATIONS = ['Santiago', 'Providencia', 'Las Condes', 'Ñuñoa', 'Maipú', 'La Florida']
 
@@ -140,7 +123,7 @@ export default function HomePage({ services, categories, loading }) {
           {featuredServices.map((service, index) => <article className="home-professional-card" key={service.id}>
             <Link to={`/servicio/${service.id}`} className="home-professional-image">
               <img src={service.image_url || CATEGORY_IMAGES[index % CATEGORY_IMAGES.length]} alt="" loading={index > 2 ? 'lazy' : 'eager'} />
-              {Number(service.rating) >= 4.8 && <span className="home-featured-badge">Destacado</span>}
+              {isPremium(service) ? <span className="home-featured-badge home-premium-badge">★ Premium</span> : Number(service.rating) >= 4.8 && <span className="home-featured-badge">Destacado</span>}
             </Link>
             <div className="home-professional-body">
               <Link to={`/servicio/${service.id}`} className="home-professional-name">{service.provider_name}</Link>

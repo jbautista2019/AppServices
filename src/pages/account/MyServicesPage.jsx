@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { isPremium } from '../../utils/featured'
 import { deleteService, getUserServices, updateService } from '../../utils/supabase'
 
 function formatDate(date) {
@@ -120,6 +121,7 @@ export default function MyServicesPage({ userId }) {
               <strong>{service.title}</strong>
               <span>{service.category} · {service.location}</span>
               <small>Desde ${Number(service.starting_price || 0).toLocaleString('es-CL')}</small>
+              {isPremium(service) ? <span className="premium-badge">★ Premium hasta el {new Date(service.premium_until).toLocaleDateString('es-CL')}</span> : service.is_active && !service.hidden_by_admin && <Link className="my-service-promote" to={`/planes?servicio=${service.id}`}>★ Promocionar</Link>}
             </div>
             <div className="my-service-provider">
               <span>{service.provider_name || 'Tu servicio'}</span>
