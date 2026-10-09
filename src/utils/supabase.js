@@ -475,6 +475,20 @@ export async function getProviderReviews(userId) {
 
 export const MIN_PASSWORD_LENGTH = 8
 
+// Reglas únicas para crear o cambiar una contraseña (registro, recuperación y perfil). Devuelve el mensaje de error o ''.
+export function validateNewPassword(password, confirmation) {
+  if (String(password || '').length < MIN_PASSWORD_LENGTH) return `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`
+  if (confirmation !== undefined && password !== confirmation) return 'Las contraseñas no coinciden.'
+  return ''
+}
+
+// Traduce los errores de Supabase al guardar una contraseña nueva.
+export function passwordErrorMessage(error, fallback = 'No se pudo cambiar la contraseña. Inténtalo nuevamente.') {
+  if (error?.code === 'same_password') return 'La nueva contraseña debe ser distinta a la actual.'
+  if (error?.code === 'weak_password') return 'La contraseña es demasiado débil. Usa letras, números y símbolos.'
+  return fallback
+}
+
 let communesCache = null
 
 // Lista de comunas (se consulta una sola vez). Si falla devuelve [] y el campo funciona como texto libre.
@@ -500,11 +514,7 @@ export async function changePassword({ email, currentPassword, newPassword }) {
   }
 
   const { error } = await supabase.auth.updateUser({ password: newPassword })
-  if (error) {
-    if (error.code === 'same_password') return { error: new Error('La nueva contraseña debe ser distinta a la actual.') }
-    if (error.code === 'weak_password') return { error: new Error('La contraseña es demasiado débil. Usa letras, números y símbolos.') }
-    return { error: new Error('No se pudo cambiar la contraseña. Inténtalo nuevamente.') }
-  }
+  if (error) return { error: new Error(passwordErrorMessage(error)) }
   return { error: null }
 }
 

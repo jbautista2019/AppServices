@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { supabase } from '../../utils/supabase'
+import { MIN_PASSWORD_LENGTH, passwordErrorMessage, supabase, validateNewPassword } from '../../utils/supabase'
 
 export default function AccountPage() {
   const navigate = useNavigate()
@@ -12,6 +12,8 @@ export default function AccountPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
+  const [confirmNewPassword, setConfirmNewPassword] = useState('')
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [recoveryMode, setRecoveryMode] = useState(new URLSearchParams(location.search).get('recovery') === 'true')
   const [busy, setBusy] = useState(false)
@@ -146,9 +148,10 @@ export default function AccountPage() {
     event.preventDefault()
     if (!supabase) return
 
-    if (newPassword.trim().length < 6) {
+    const passwordError = validateNewPassword(newPassword, confirmNewPassword)
+    if (passwordError) {
       setNoticeType('error')
-      setNotice('Usa una contraseña de al menos seis caracteres.')
+      setNotice(passwordError)
       return
     }
 
@@ -161,11 +164,12 @@ export default function AccountPage() {
       setNotice('Contraseña actualizada correctamente. Ya puedes iniciar sesión.')
       setRecoveryMode(false)
       setNewPassword('')
+      setConfirmNewPassword('')
       setPassword('')
       window.history.replaceState({}, '', `${window.location.pathname}`)
-    } catch {
+    } catch (error) {
       setNoticeType('error')
-      setNotice('No se pudo actualizar la contraseña. Inténtalo de nuevo.')
+      setNotice(passwordErrorMessage(error, 'No se pudo actualizar la contraseña. Inténtalo de nuevo.'))
     } finally {
       setBusy(false)
     }
@@ -187,10 +191,11 @@ export default function AccountPage() {
         <h1 id="login-title">Crear nueva contraseña</h1>
         <p className="login-subtitle">Elige una contraseña segura para tu cuenta.</p>
         <form className="login-form" onSubmit={handleSetPassword}>
-          <label className="login-field"><span aria-hidden="true">♙</span><input type={showPassword ? 'text' : 'password'} autoComplete="new-password" minLength={6} required value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="Nueva contraseña" aria-label="Nueva contraseña" /><button type="button" aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'} onClick={() => setShowPassword((visible) => !visible)}>{showPassword ? '◉' : '◎'}</button></label>
+          <label className="login-field"><span aria-hidden="true">♙</span><input type={showPassword ? 'text' : 'password'} autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} required value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder={`Nueva contraseña (mínimo ${MIN_PASSWORD_LENGTH} caracteres)`} aria-label="Nueva contraseña" /><button type="button" aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'} onClick={() => setShowPassword((visible) => !visible)}>{showPassword ? '◉' : '◎'}</button></label>
+          <label className="login-field"><span aria-hidden="true">♙</span><input type={showConfirmPassword ? 'text' : 'password'} autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} required value={confirmNewPassword} onChange={(event) => setConfirmNewPassword(event.target.value)} placeholder="Confirmar nueva contraseña" aria-label="Confirmar nueva contraseña" /><button type="button" aria-label={showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'} onClick={() => setShowConfirmPassword((visible) => !visible)}>{showConfirmPassword ? '◉' : '◎'}</button></label>
           <button className="login-submit" type="submit" disabled={busy}>{busy ? 'Guardando...' : 'Guardar contraseña'}</button>
         </form>
-        <button type="button" className="login-recovery-back" onClick={() => { setRecoveryMode(false); setNotice(''); setNewPassword('') }}>Volver al inicio de sesión</button>
+        <button type="button" className="login-recovery-back" onClick={() => { setRecoveryMode(false); setNotice(''); setNewPassword(''); setConfirmNewPassword('') }}>Volver al inicio de sesión</button>
         {notice && <p className={`account-notice account-notice--${noticeType}`} role={noticeType === 'error' ? 'alert' : 'status'}>{notice}</p>}
       </div> : session ? <div className="login-session">
         <span className="login-mark" aria-hidden="true">☰</span>

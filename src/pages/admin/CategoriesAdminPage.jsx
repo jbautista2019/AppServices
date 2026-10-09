@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import ImagePicker from '../../components/services/ImagePicker'
-import { createCategory, deleteCategory, getCategories, isCategoryAdmin, isSupabaseConfigured, supabase, updateCategory, uploadServiceImage } from '../../utils/supabase'
+import { createCategory, deleteCategory, getCategories, isCategoryAdmin, isSupabaseConfigured, MIN_PASSWORD_LENGTH, passwordErrorMessage, supabase, updateCategory, uploadServiceImage, validateNewPassword } from '../../utils/supabase'
 
 export default function CategoriesAdminPage() {
   const [session, setSession] = useState(null)
@@ -11,6 +11,7 @@ export default function CategoriesAdminPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
+  const [confirmNewPassword, setConfirmNewPassword] = useState('')
   const [recoveryMode, setRecoveryMode] = useState(new URLSearchParams(window.location.search).get('recovery') === 'true')
   const [draftName, setDraftName] = useState('')
   const [draftImageUrl, setDraftImageUrl] = useState('')
@@ -107,17 +108,24 @@ export default function CategoriesAdminPage() {
     event.preventDefault()
     if (!supabase) return
 
+    const passwordError = validateNewPassword(newPassword, confirmNewPassword)
+    if (passwordError) {
+      setNotice(passwordError)
+      return
+    }
+
     setBusy(true)
     setNotice('')
     const { error } = await supabase.auth.updateUser({ password: newPassword })
     if (error) {
-      setNotice('No se pudo actualizar la contraseña. Usa una contraseña de al menos seis caracteres.')
+      setNotice(passwordErrorMessage(error, 'No se pudo actualizar la contraseña. Inténtalo nuevamente.'))
       setBusy(false)
       return
     }
 
     setRecoveryMode(false)
     setNewPassword('')
+    setConfirmNewPassword('')
     setPassword('')
     window.history.replaceState({}, '', '/admin/categorias')
     setNotice('Contraseña actualizada. Tu cuenta ya puede iniciar sesión.')
@@ -214,7 +222,8 @@ export default function CategoriesAdminPage() {
       {!isSupabaseConfigured && <p className="category-admin-notice">Configura Supabase antes de administrar categorías.</p>}
       {isSupabaseConfigured && authLoading && <p className="category-admin-notice">Comprobando sesión...</p>}
       {isSupabaseConfigured && !authLoading && recoveryMode && session && <form className="category-admin-login" onSubmit={handleSetPassword}>
-        <label>Nueva contraseña<input type="password" autoComplete="new-password" minLength={6} required value={newPassword} onChange={(event) => setNewPassword(event.target.value)} /></label>
+        <label>Nueva contraseña<input type="password" autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} required value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder={`Mínimo ${MIN_PASSWORD_LENGTH} caracteres`} /></label>
+        <label>Confirmar nueva contraseña<input type="password" autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} required value={confirmNewPassword} onChange={(event) => setConfirmNewPassword(event.target.value)} /></label>
         <button type="submit" disabled={busy}>{busy ? 'Guardando...' : 'Guardar contraseña'}</button>
       </form>}
       {isSupabaseConfigured && !authLoading && !session && !recoveryMode && <form className="category-admin-login" onSubmit={handleLogin}>

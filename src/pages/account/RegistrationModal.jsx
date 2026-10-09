@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { supabase } from '../../utils/supabase'
+import { supabase, validateNewPassword } from '../../utils/supabase'
 
 export default function RegistrationModal({ onClose }) {
   const [fullName, setFullName] = useState('')
@@ -36,9 +36,10 @@ export default function RegistrationModal({ onClose }) {
       return
     }
 
-    if (password !== confirmPassword) {
+    const passwordError = validateNewPassword(password, confirmPassword)
+    if (passwordError) {
       setNoticeType('error')
-      setNotice('Las contraseñas no coinciden.')
+      setNotice(passwordError)
       return
     }
 
