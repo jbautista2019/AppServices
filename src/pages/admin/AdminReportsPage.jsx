@@ -133,15 +133,15 @@ export default function AdminReportsPage() {
               <time dateTime={report.created_at}>{new Date(report.created_at).toLocaleDateString('es-CL')}</time>
             </div>
             <p className="admin-report-service">
-              <Link to={`/servicio/${report.service_id}`}>{report.service_title}</Link> · {report.provider_name}
-              {!report.service_active && <span className="admin-report-hidden">Oculta</span>}
+              {report.service_deleted ? <strong>{report.service_title}</strong> : <Link to={`/servicio/${report.service_id}`}>{report.service_title}</Link>} · {report.provider_name}
+              {report.service_deleted ? <span className="admin-report-hidden">Eliminada por su dueño</span> : !report.service_active && <span className="admin-report-hidden">Oculta</span>}
               {Number(report.report_count) > 1 && <span className="admin-report-count">{report.report_count} reportes en total</span>}
             </p>
             {report.details ? <p className="admin-report-details">{report.details}</p> : <p className="admin-report-details admin-report-details--empty">Sin detalles.</p>}
             <small className="admin-report-reporter">Reportado por {report.reporter_name || 'usuario'}{report.reporter_email ? ` (${report.reporter_email})` : ''}</small>
           </div>
           <div className="admin-users-actions admin-report-actions">
-            <button type="button" disabled={busyId === report.id} onClick={() => toggleService(report)}>{report.service_active ? 'Ocultar publicación' : 'Mostrar publicación'}</button>
+            {!report.service_deleted && <button type="button" disabled={busyId === report.id} onClick={() => toggleService(report)}>{report.service_active ? 'Ocultar publicación' : 'Mostrar publicación'}</button>}
             {report.status !== 'reviewed' && <button type="button" disabled={busyId === report.id} onClick={() => changeStatus(report, 'reviewed', 'Reporte marcado como revisado.')}>Marcar revisado</button>}
             {report.status !== 'dismissed' && <button type="button" disabled={busyId === report.id} onClick={() => changeStatus(report, 'dismissed', 'Reporte descartado.')}>Descartar</button>}
             {report.status !== 'pending' && <button type="button" disabled={busyId === report.id} onClick={() => changeStatus(report, 'pending', 'Reporte reabierto.')}>Reabrir</button>}

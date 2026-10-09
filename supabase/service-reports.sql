@@ -15,6 +15,22 @@ create table if not exists public.service_reports (
   constraint service_reports_service_reporter_key unique (service_id, reporter_id)
 );
 
+-- Conserva el reporte como evidencia aunque el dueño elimine la publicación:
+-- guarda una copia de los datos y deja service_id en null cuando se borra el servicio.
+alter table public.service_reports add column if not exists service_title text;
+alter table public.service_reports add column if not exists provider_id uuid;
+alter table public.service_reports add column if not exists provider_name text;
+alter table public.service_reports alter column service_id drop not null;
+alter table public.service_reports drop constraint if exists service_reports_service_id_fkey;
+alter table public.service_reports
+  add constraint service_reports_service_id_fkey
+  foreign key (service_id) references public.services(id) on delete set null;
+
+update public.service_reports r
+set service_title = s.title, provider_id = s.provider_id, provider_name = s.provider_name
+from public.services s
+where s.id = r.service_id and r.service_title is null;
+
 create index if not exists service_reports_status_created_idx
   on public.service_reports (status, created_at desc);
 
@@ -37,7 +53,7 @@ set search_path = ''
 as $$
 declare
   caller_id uuid := (select auth.uid());
-  owner_id uuid;
+  svc record;
   clean_details text := nullif(btrim(coalesce(p_details, '')), '');
 begin
   if caller_id is null then
@@ -52,18 +68,18 @@ begin
     raise exception 'El detalle no puede superar los 1000 caracteres.';
   end if;
 
-  select provider_id into owner_id from public.services where id = p_service_id and is_active = true;
+  select * into svc from public.services where id = p_service_id and is_active = true;
   if not found then
     raise exception 'Esta publicación no está disponible.';
   end if;
 
-  if owner_id = caller_id then
+  if svc.provider_id = caller_id then
     raise exception 'No puedes reportar tu propia publicación.';
   end if;
 
   begin
-    insert into public.service_reports (service_id, reporter_id, reason, details)
-    values (p_service_id, caller_id, p_reason, clean_details);
+    insert into public.service_reports (service_id, reporter_id, reason, details, service_title, provider_id, provider_name)
+    values (p_service_id, caller_id, p_reason, clean_details, svc.title, svc.provider_id, svc.provider_name);
   exception when unique_violation then
     raise exception 'Ya reportaste esta publicación. Revisaremos tu reporte.';
   end;
@@ -86,6 +102,7 @@ returns table (
   service_id bigint,
   service_title text,
   service_active boolean,
+  service_deleted boolean,
   provider_name text,
   reporter_name text,
   reporter_email text,
@@ -109,18 +126,19 @@ begin
   select
     r.id,
     r.service_id,
-    s.title,
-    s.is_active,
-    s.provider_name,
+    coalesce(s.title, r.service_title, 'Publicación eliminada'),
+    coalesce(s.is_active, false),
+    (r.service_id is null),
+    coalesce(s.provider_name, r.provider_name, '—'),
     coalesce(u.raw_user_meta_data ->> 'full_name', u.raw_user_meta_data ->> 'name', split_part(u.email, '@', 1)),
     u.email::text,
     r.reason,
     r.details,
     r.status,
     r.created_at,
-    (select count(*) from public.service_reports x where x.service_id = r.service_id)
+    (select count(*) from public.service_reports x where x.service_id is not distinct from r.service_id)
   from public.service_reports r
-  join public.services s on s.id = r.service_id
+  left join public.services s on s.id = r.service_id
   left join auth.users u on u.id = r.reporter_id
   order by (r.status = 'pending') desc, r.created_at desc;
 end
