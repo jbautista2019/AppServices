@@ -87,6 +87,17 @@ export default function AdminReportsPage() {
   }, [reports])
   const visibleReports = filter === 'all' ? reports : reports.filter((report) => report.status === filter)
 
+  // Agrupa por publicación (las eliminadas no tienen service_id, así que cada una va sola).
+  const groups = useMemo(() => {
+    const byKey = new Map()
+    for (const report of visibleReports) {
+      const key = report.service_id ?? `deleted-${report.id}`
+      if (!byKey.has(key)) byKey.set(key, { key, first: report, reports: [] })
+      byKey.get(key).reports.push(report)
+    }
+    return [...byKey.values()]
+  }, [visibleReports])
+
   async function runAction(report, action, successText) {
     setBusyId(report.id)
     setNotice('')
@@ -104,6 +115,26 @@ export default function AdminReportsPage() {
   }
 
   const changeStatus = (report, status, text) => runAction(report, () => setReportStatus(report.id, status), text)
+  // Cambia el estado de todos los reportes pendientes de una publicación de una vez.
+  async function resolveGroup(group, status, text) {
+    const pending = group.reports.filter((report) => report.status === 'pending')
+    setBusyId(group.key)
+    setNotice('')
+    let failure = null
+    for (const report of pending) {
+      const { error } = await setReportStatus(report.id, status)
+      if (error) {
+        failure = error
+        break
+      }
+    }
+    await loadReports()
+    window.dispatchEvent(new Event(REPORTS_CHANGED_EVENT))
+    setNoticeType(failure ? 'error' : 'success')
+    setNotice(failure ? failure.message : text)
+    setBusyId(null)
+  }
+
   const toggleService = (report) => runAction(report, () => setServiceActive(report.service_id, !report.service_active), report.service_active ? 'La publicación quedó oculta.' : 'La publicación volvió a estar visible.')
 
   return (
@@ -125,28 +156,43 @@ export default function AdminReportsPage() {
           {FILTERS.map((item) => <button key={item.id} type="button" role="tab" aria-selected={filter === item.id} className={filter === item.id ? 'is-active' : ''} onClick={() => setFilter(item.id)}>{item.label} <small>{counts[item.id]}</small></button>)}
         </div>
 
-        {visibleReports.length ? <ul className="admin-reports-list">{visibleReports.map((report) => <li className="admin-report" key={report.id}>
-          <div className="admin-report-main">
-            <div className="admin-report-top">
-              <span className={`admin-report-status admin-report-status--${report.status}`}>{STATUS_LABELS[report.status]}</span>
-              <strong>{reasonLabel(report.reason)}</strong>
-              <time dateTime={report.created_at}>{new Date(report.created_at).toLocaleDateString('es-CL')}</time>
+        {groups.length ? <ul className="admin-reports-list">{groups.map((group) => {
+          const { first } = group
+          const pendingCount = group.reports.filter((report) => report.status === 'pending').length
+          const groupBusy = busyId === group.key
+          return <li className="admin-report-group" key={group.key}>
+            <div className="admin-report-group-header">
+              <div className="admin-report-main">
+                <p className="admin-report-service">
+                  {first.service_deleted ? <strong>{first.service_title}</strong> : <Link to={`/servicio/${first.service_id}`}>{first.service_title}</Link>} · {first.provider_name}
+                  {first.service_deleted ? <span className="admin-report-hidden">Eliminada por su dueño</span> : !first.service_active && <span className="admin-report-hidden">Oculta</span>}
+                  <span className="admin-report-count">{group.reports.length} {group.reports.length === 1 ? 'reporte' : 'reportes'}</span>
+                </p>
+              </div>
+              <div className="admin-users-actions admin-report-actions">
+                {!first.service_deleted && <button type="button" disabled={groupBusy || busyId === first.id} onClick={() => toggleService(first)}>{first.service_active ? 'Ocultar publicación' : 'Mostrar publicación'}</button>}
+                {pendingCount > 1 && <button type="button" disabled={groupBusy} onClick={() => resolveGroup(group, 'reviewed', 'Reportes marcados como revisados.')}>Revisar todos ({pendingCount})</button>}
+                {pendingCount > 1 && <button type="button" disabled={groupBusy} onClick={() => resolveGroup(group, 'dismissed', 'Reportes descartados.')}>Descartar todos</button>}
+              </div>
             </div>
-            <p className="admin-report-service">
-              {report.service_deleted ? <strong>{report.service_title}</strong> : <Link to={`/servicio/${report.service_id}`}>{report.service_title}</Link>} · {report.provider_name}
-              {report.service_deleted ? <span className="admin-report-hidden">Eliminada por su dueño</span> : !report.service_active && <span className="admin-report-hidden">Oculta</span>}
-              {Number(report.report_count) > 1 && <span className="admin-report-count">{report.report_count} reportes en total</span>}
-            </p>
-            {report.details ? <p className="admin-report-details">{report.details}</p> : <p className="admin-report-details admin-report-details--empty">Sin detalles.</p>}
-            <small className="admin-report-reporter">Reportado por {report.reporter_name || 'usuario'}{report.reporter_email ? ` (${report.reporter_email})` : ''}</small>
-          </div>
-          <div className="admin-users-actions admin-report-actions">
-            {!report.service_deleted && <button type="button" disabled={busyId === report.id} onClick={() => toggleService(report)}>{report.service_active ? 'Ocultar publicación' : 'Mostrar publicación'}</button>}
-            {report.status !== 'reviewed' && <button type="button" disabled={busyId === report.id} onClick={() => changeStatus(report, 'reviewed', 'Reporte marcado como revisado.')}>Marcar revisado</button>}
-            {report.status !== 'dismissed' && <button type="button" disabled={busyId === report.id} onClick={() => changeStatus(report, 'dismissed', 'Reporte descartado.')}>Descartar</button>}
-            {report.status !== 'pending' && <button type="button" disabled={busyId === report.id} onClick={() => changeStatus(report, 'pending', 'Reporte reabierto.')}>Reabrir</button>}
-          </div>
-        </li>)}</ul> : <p className="category-admin-notice">No hay reportes en esta categoría.</p>}
+            <ul className="admin-report-items">{group.reports.map((report) => <li className="admin-report-item" key={report.id}>
+              <div className="admin-report-main">
+                <div className="admin-report-top">
+                  <span className={`admin-report-status admin-report-status--${report.status}`}>{STATUS_LABELS[report.status]}</span>
+                  <strong>{reasonLabel(report.reason)}</strong>
+                  <time dateTime={report.created_at}>{new Date(report.created_at).toLocaleDateString('es-CL')}</time>
+                </div>
+                {report.details ? <p className="admin-report-details">{report.details}</p> : <p className="admin-report-details admin-report-details--empty">Sin detalles.</p>}
+                <small className="admin-report-reporter">Reportado por {report.reporter_name || 'usuario'}{report.reporter_email ? ` (${report.reporter_email})` : ''}</small>
+              </div>
+              <div className="admin-report-item-actions">
+                {report.status !== 'reviewed' && <button type="button" disabled={groupBusy || busyId === report.id} onClick={() => changeStatus(report, 'reviewed', 'Reporte marcado como revisado.')}>Marcar revisado</button>}
+                {report.status !== 'dismissed' && <button type="button" disabled={groupBusy || busyId === report.id} onClick={() => changeStatus(report, 'dismissed', 'Reporte descartado.')}>Descartar</button>}
+                {report.status !== 'pending' && <button type="button" disabled={groupBusy || busyId === report.id} onClick={() => changeStatus(report, 'pending', 'Reporte reabierto.')}>Reabrir</button>}
+              </div>
+            </li>)}</ul>
+          </li>
+        })}</ul> : <p className="category-admin-notice">No hay reportes en esta categoría.</p>}
       </section>}
       {notice && <div className={`category-admin-toast category-admin-toast--${noticeType}`} role={noticeType === 'error' ? 'alert' : 'status'}>
         <span className="category-admin-toast-icon" aria-hidden="true">{noticeType === 'success' ? '✓' : '!'}</span>

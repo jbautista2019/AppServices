@@ -1987,3 +1987,76 @@ button.account-module-card {
 }
 
 .my-service-status.is-hidden { color: #b3261e; }
+
+.admin-report-group {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+  overflow: hidden;
+}
+
+.admin-report-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  background: #f7f9fc;
+}
+
+.admin-report-group-header .admin-report-actions {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.admin-report-items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-report-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px 18px;
+}
+
+.admin-report-item + .admin-report-item {
+  border-top: 1px solid var(--line);
+}
+
+.admin-report-item-actions {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-report-item-actions button {
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-report-item-actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+@media (max-width: 700px) {
+  .admin-report-group-header,
+  .admin-report-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
