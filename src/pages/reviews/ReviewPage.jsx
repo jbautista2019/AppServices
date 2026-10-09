@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
-import { getReviewRequest, isSupabaseConfigured, submitServiceReview, supabase } from '../../utils/supabase'
+import { getReviewRequest, getServiceById, isSupabaseConfigured, submitServiceReview, supabase } from '../../utils/supabase'
 
 const RATING_LABELS = ['', 'Muy malo', 'Malo', 'Regular', 'Bueno', 'Excelente']
 
@@ -17,6 +17,7 @@ export default function ReviewPage() {
   const [saving, setSaving] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
+  const [serviceAvailable, setServiceAvailable] = useState(false)
   const userId = session?.user?.id
 
   useEffect(() => {
@@ -52,6 +53,23 @@ export default function ReviewPage() {
     return () => { cancelled = true }
   }, [requestId, userId])
 
+  // Una publicación pausada, oculta o eliminada deja de ser visible: solo se enlaza si todavía se puede abrir.
+  useEffect(() => {
+    if (!request?.service_id) {
+      setServiceAvailable(false)
+      return
+    }
+
+    let cancelled = false
+    getServiceById(request.service_id).then(({ data }) => {
+      if (!cancelled) setServiceAvailable(Boolean(data))
+    }).catch(() => {
+      if (!cancelled) setServiceAvailable(false)
+    })
+
+    return () => { cancelled = true }
+  }, [request?.service_id])
+
   async function handleSubmit(event) {
     event.preventDefault()
     if (!rating || saving) return
@@ -79,12 +97,12 @@ export default function ReviewPage() {
   else if (done) content = <>
     <h1>¡Gracias por tu valoración!</h1>
     <p>Tu opinión sobre «{request.service_title}» ya es visible para otras personas.</p>
-    <Link className="review-link" to={`/servicio/${request.service_id}`}>Ver el servicio <span aria-hidden="true">→</span></Link>
+    {serviceAvailable ? <Link className="review-link" to={`/servicio/${request.service_id}`}>Ver el servicio <span aria-hidden="true">→</span></Link> : <p>Esta publicación ya no está disponible.</p>}
   </>
   else if (request.completed_at) content = <>
     <h1>Ya valoraste este servicio</h1>
     <p>Gracias por compartir tu experiencia con «{request.service_title}».</p>
-    <Link className="review-link" to={`/servicio/${request.service_id}`}>Ver el servicio <span aria-hidden="true">→</span></Link>
+    {serviceAvailable ? <Link className="review-link" to={`/servicio/${request.service_id}`}>Ver el servicio <span aria-hidden="true">→</span></Link> : <p>Esta publicación ya no está disponible.</p>}
   </>
   else content = <>
     <p className="eyebrow">VALORACIÓN</p>
