@@ -89,7 +89,7 @@
 .listing-grid--4 .card-bottom { flex-wrap: wrap; gap: 6px 10px; }
 @media (min-width: 1270px) { .listing-grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 
-/* Galería del detalle: zoom, flechas y contador */
+/* Galería del detalle: flechas, contador y botón para ampliar */
 .image-gallery:focus-visible {
   outline: 2px solid var(--brand-blue);
   outline-offset: 4px;
@@ -102,10 +102,22 @@
   touch-action: pan-y;
 }
 
+.image-gallery-open {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+
+.image-gallery-open:focus-visible {
+  outline: 2px solid var(--brand-blue);
+  outline-offset: -2px;
+}
+
 .image-gallery-main {
   display: block;
-  transform-origin: var(--zoom-x, 50%) var(--zoom-y, 50%);
-  transition: transform 0.2s ease-out;
   animation: gallery-fade 0.25s ease;
   user-select: none;
 }
@@ -113,16 +125,6 @@
 @keyframes gallery-fade {
   from { opacity: 0.35; }
   to { opacity: 1; }
-}
-
-@media (hover: hover) {
-  .image-gallery-stage {
-    cursor: zoom-in;
-  }
-
-  .image-gallery-stage:hover .image-gallery-main {
-    transform: scale(2);
-  }
 }
 
 .image-gallery-arrow {
@@ -174,9 +176,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .image-gallery-main {
+  .image-gallery-main,
+  .lightbox-image {
     animation: none;
-    transition: none;
   }
 }
 
@@ -192,3 +194,178 @@
 .profile-data dd { overflow-wrap: anywhere; }
 .profile-card-identity { min-width: 0; }
 .profile-card-identity p, .profile-card-identity h1 { overflow-wrap: anywhere; }
+
+/* Visor de fotos a pantalla grande */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(10, 16, 28, 0.95);
+  color: white;
+  overscroll-behavior: contain;
+}
+
+.lightbox-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 36px 150px;
+  touch-action: pan-y;
+}
+
+.lightbox-image {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: 100%;
+  object-fit: contain;
+  animation: gallery-fade 0.25s ease;
+  user-select: none;
+}
+
+.lightbox-counter {
+  position: absolute;
+  top: 18px;
+  left: 20px;
+  z-index: 2;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  font-size: 13px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.lightbox-close,
+.lightbox-arrow {
+  position: absolute;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: rgba(255, 255, 255, 0.14);
+  color: white;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.lightbox-close:hover,
+.lightbox-arrow:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.lightbox-close:focus-visible,
+.lightbox-arrow:focus-visible,
+.lightbox-thumbs button:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+.lightbox-close {
+  top: 14px;
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  border-radius: 4px;
+  font-size: 32px;
+  line-height: 1;
+}
+
+.lightbox-arrow {
+  top: 50%;
+  width: 44px;
+  height: 64px;
+  padding-bottom: 6px;
+  border-radius: 4px;
+  font-size: 40px;
+  line-height: 1;
+  transform: translateY(-50%);
+}
+
+.lightbox-arrow--prev {
+  left: 12px;
+}
+
+.lightbox-arrow--next {
+  right: 12px;
+}
+
+.lightbox-thumbs {
+  position: absolute;
+  top: 72px;
+  bottom: 24px;
+  left: 70px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.lightbox-thumbs::-webkit-scrollbar {
+  display: none;
+}
+
+.lightbox-thumbs button {
+  flex: none;
+  width: 58px;
+  height: 58px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  background: white;
+  overflow: hidden;
+  cursor: pointer;
+  opacity: 0.65;
+}
+
+.lightbox-thumbs button:hover,
+.lightbox-thumbs button.is-active {
+  opacity: 1;
+}
+
+.lightbox-thumbs button.is-active {
+  border-color: #3483fa;
+}
+
+.lightbox-thumbs img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Pantallas angostas: miniaturas en una fila abajo y flechas más pequeñas sobre la foto */
+@media (max-width: 760px) {
+  .lightbox-stage {
+    padding: 64px 12px 96px;
+  }
+
+  .lightbox-thumbs {
+    top: auto;
+    right: 12px;
+    bottom: 16px;
+    left: 12px;
+    flex-direction: row;
+    justify-content: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .lightbox-arrow {
+    width: 38px;
+    height: 52px;
+    font-size: 32px;
+  }
+
+  .lightbox-arrow--prev {
+    left: 6px;
+  }
+
+  .lightbox-arrow--next {
+    right: 6px;
+  }
+}
