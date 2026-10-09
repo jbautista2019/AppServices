@@ -1610,6 +1610,7 @@ button.account-module-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 12px;
   padding-top: 14px;
   border-top: 1px solid var(--line);

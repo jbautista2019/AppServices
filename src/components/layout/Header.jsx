@@ -260,6 +260,7 @@ export default function Header() {
               {categoryAdminChecked && canManageCategories ? <>
                 <Link to="/admin/categorias" onClick={() => setProfileMenuOpen(false)}>Administrar categorías</Link>
                 <Link to="/admin/reportes" onClick={() => setProfileMenuOpen(false)}>Reportes de publicaciones</Link>
+                <Link to="/admin/usuarios" onClick={() => setProfileMenuOpen(false)}>Administrar usuarios</Link>
               </> : categoryAdminChecked && <>
                 <Link to="/mis-servicios" onClick={() => setProfileMenuOpen(false)}>Mis servicios</Link>
                 <Link to="/mensajes" onClick={() => setProfileMenuOpen(false)}>Mensajes</Link>
