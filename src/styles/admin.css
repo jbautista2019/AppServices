@@ -1984,3 +1984,5 @@ button.account-module-card {
     width: 100%;
   }
 }
+
+.my-service-status.is-hidden { color: #b3261e; }

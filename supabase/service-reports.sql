@@ -163,12 +163,50 @@ begin
     raise exception 'No tienes permiso para moderar publicaciones.';
   end if;
 
-  update public.services set is_active = p_active where id = p_service_id;
+  update public.services set is_active = p_active, hidden_by_admin = not p_active where id = p_service_id;
 end
 $$;
 
 revoke all on function public.admin_set_service_active(bigint, boolean) from public;
 grant execute on function public.admin_set_service_active(bigint, boolean) to authenticated;
+
+notify pgrst, 'reload schema';
+
+-- ---------------------------------------------------------------------------
+-- Ocultar por moderación: distinto de "pausar". El dueño no puede reactivar una publicación
+-- que un administrador ocultó, ni modificar esta marca.
+-- ---------------------------------------------------------------------------
+
+alter table public.services add column if not exists hidden_by_admin boolean not null default false;
+
+create or replace function public.protect_service_moderation()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if (select auth.uid()) is null or (select public.is_category_admin()) then
+    return new;
+  end if;
+
+  if tg_op = 'INSERT' then
+    new.hidden_by_admin := false;
+  else
+    new.hidden_by_admin := old.hidden_by_admin;
+    if old.hidden_by_admin then
+      new.is_active := false;
+    end if;
+  end if;
+
+  return new;
+end
+$$;
+
+drop trigger if exists protect_service_moderation on public.services;
+create trigger protect_service_moderation
+  before insert or update on public.services
+  for each row execute function public.protect_service_moderation();
 
 notify pgrst, 'reload schema';
 

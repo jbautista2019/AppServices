@@ -26,11 +26,12 @@ export async function getPublishedServices() {
 export async function getUserServices(userId) {
   if (!supabase || !userId) return { data: [], error: null }
 
-  const { data, error } = await supabase
-    .from('services')
-    .select('id, title, provider_name, category, location, rating, starting_price, image_url, description, is_active, created_at')
-    .eq('provider_id', userId)
-    .order('created_at', { ascending: false })
+  const columns = 'id, title, provider_name, category, location, rating, starting_price, image_url, description, is_active, created_at'
+  const query = (select) => supabase.from('services').select(select).eq('provider_id', userId).order('created_at', { ascending: false })
+
+  const { data, error } = await query(`${columns}, hidden_by_admin`)
+  // Si aún no se ejecutó supabase/service-reports.sql, la columna no existe: se consulta sin ella.
+  if (error?.code === '42703' || /hidden_by_admin/.test(error?.message || '')) return query(columns)
 
   return { data, error }
 }

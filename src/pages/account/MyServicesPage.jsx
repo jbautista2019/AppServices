@@ -116,7 +116,7 @@ export default function MyServicesPage({ userId }) {
               {service.image_url ? <img src={service.image_url} alt="" /> : <span>{service.category?.slice(0, 1) || 'S'}</span>}
             </Link>
             <div className="my-service-description">
-              <span className={`my-service-status ${service.is_active ? 'is-active' : 'is-paused'}`}>{service.is_active ? 'Publicado' : 'Pausado'}</span>
+              <span className={`my-service-status ${service.hidden_by_admin ? 'is-hidden' : service.is_active ? 'is-active' : 'is-paused'}`}>{service.hidden_by_admin ? 'Oculto por moderación' : service.is_active ? 'Publicado' : 'Pausado'}</span>
               <strong>{service.title}</strong>
               <span>{service.category} · {service.location}</span>
               <small>Desde ${Number(service.starting_price || 0).toLocaleString('es-CL')}</small>
@@ -128,7 +128,7 @@ export default function MyServicesPage({ userId }) {
             <div className="my-service-actions">
               <Link className="my-service-action my-service-action--view" to={`/servicio/${service.id}`} aria-label={`Ver ${service.title}`} title="Ver servicio"><ActionIcon name="view" /></Link>
               <Link className="my-service-action my-service-action--edit" to={`/servicio/${service.id}/editar`} aria-label={`Editar ${service.title}`} title="Editar servicio"><ActionIcon name="edit" /></Link>
-              <button className="my-service-action my-service-action--toggle" type="button" disabled={busyServiceId === service.id} onClick={() => handleToggleActive(service)} aria-label={service.is_active ? `Pausar ${service.title}` : `Reactivar ${service.title}`} title={service.is_active ? 'Pausar servicio' : 'Reactivar servicio'}><ActionIcon name={service.is_active ? 'pause' : 'resume'} /></button>
+              <button className="my-service-action my-service-action--toggle" type="button" disabled={busyServiceId === service.id || service.hidden_by_admin} onClick={() => handleToggleActive(service)} aria-label={service.is_active ? `Pausar ${service.title}` : `Reactivar ${service.title}`} title={service.hidden_by_admin ? "Un administrador ocultó esta publicación" : service.is_active ? "Pausar servicio" : "Reactivar servicio"}><ActionIcon name={service.is_active ? 'pause' : 'resume'} /></button>
               <button className="my-service-action my-service-action--delete" type="button" disabled={busyServiceId === service.id} onClick={() => handleDelete(service)} aria-label={`Eliminar ${service.title}`} title="Eliminar servicio"><ActionIcon name="delete" /></button>
             </div>
           </li>)}
