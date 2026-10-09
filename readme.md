@@ -43,30 +43,16 @@ La imagen de cada categoría se configura pegando una URL pública en el formula
 
 Al renombrar una categoría se actualizan también sus servicios. La base de datos impide eliminar categorías que todavía tengan servicios asociados.
 
-### Administrar usuarios
-
-El módulo `/admin/usuarios` crea cuentas de Supabase Auth, actualiza nombre/correo/contraseña y habilita o inhabilita el acceso. Todas las operaciones administrativas pasan por una Edge Function; la clave `service_role` nunca se coloca en el frontend.
-
-Desde la raíz del proyecto, puedes usar Supabase CLI con `npx` sin instalarlo globalmente. Primero inicia sesión y vincula el proyecto con su referencia (el identificador al inicio de la URL `https://<PROJECT_REF>.supabase.co`):
-
-```bash
-npx --yes supabase login
-npx --yes supabase link --project-ref <PROJECT_REF>
-npx --yes supabase functions deploy admin-users
-```
-
-`supabase login` solicita un access token de tu cuenta Supabase. Pégalo directamente en la terminal, no en el código ni en el chat. `supabase link` puede solicitar la contraseña de la base de datos; introdúcela solo en la terminal.
-
-La función usa `SUPABASE_URL`, `SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY` del entorno de Edge Functions de Supabase. Solo usuarios cuyo UUID esté en `public.category_admins` pueden acceder. Las cuentas administradoras no se pueden inhabilitar desde este módulo.
-
 ### Búsqueda híbrida (texto + semántica)
 
 El buscador combina coincidencia de texto (sin tildes, con tolerancia a errores de tipeo y sinónimos chilenos como plomero → gasfíter) con búsqueda semántica por embeddings (modelo `gte-small`, 384 dimensiones). Las búsquedas cortas ("Maipú", "gasfíter") priorizan el texto y las frases largas ("me gotea el techo") priorizan la semántica; una coincidencia exacta siempre queda primero. Si el servicio no está disponible, la búsqueda cae a coincidencia de texto simple en el navegador.
 
 1. Ejecuta `supabase/semantic-search.sql` en el **SQL Editor** (activa `vector`, `unaccent` y `pg_trgm`, agrega `services.embedding`, la tabla de sinónimos y la función `search_services`).
-2. Despliega la Edge Function:
+2. Despliega la Edge Function. Con Supabase CLI (vía `npx`, sin instalarlo), inicia sesión y vincula el proyecto con su referencia (el identificador al inicio de la URL `https://<PROJECT_REF>.supabase.co`); el token y la contraseña de la base de datos se pegan solo en la terminal:
 
 ```bash
+npx --yes supabase login
+npx --yes supabase link --project-ref <PROJECT_REF>
 npx --yes supabase functions deploy semantic-search
 ```
 

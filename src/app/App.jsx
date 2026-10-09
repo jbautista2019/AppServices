@@ -7,7 +7,6 @@ import AccountPage from '../pages/account/AccountPage'
 import MyServicesRoute from '../pages/account/MyServicesRoute'
 import ProfilePage from '../pages/account/ProfilePage'
 import RegistrationModal from '../pages/account/RegistrationModal'
-import AdminUsersPage from '../pages/admin/AdminUsersPage'
 import AdminReportsPage from '../pages/admin/AdminReportsPage'
 import CategoriesAdminPage from '../pages/admin/CategoriesAdminPage'
 import HomePage from '../pages/home/HomePage'
@@ -69,7 +68,6 @@ export default function App() {
       <Route path="/mis-servicios" element={<MyServicesRoute />} />
       <Route path="/mensajes" element={<MessagesPage />} />
       <Route path="/admin/categorias" element={<CategoriesAdminPage />} />
-      <Route path="/admin/usuarios" element={<AdminUsersPage />} />
       <Route path="/admin/reportes" element={<AdminReportsPage />} />
     </Routes>
     {loginOpen && <AccountPage />}

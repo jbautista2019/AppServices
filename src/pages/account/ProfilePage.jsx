@@ -237,7 +237,6 @@ export default function ProfilePage() {
             <footer className="profile-card-footer">
               {isAdmin && <Link to="/admin/categorias">Administrar categorías <span>→</span></Link>}
               {isAdmin && <Link to="/admin/reportes">Reportes <span>→</span></Link>}
-              {isAdmin && <Link to="/admin/usuarios">Usuarios <span>→</span></Link>}
               <button type="button" onClick={handleLogout}>Cerrar sesión</button>
             </footer>
           </section>}

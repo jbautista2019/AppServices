@@ -119,12 +119,6 @@ export async function deleteCategory(name) {
   return supabase.from('categories').delete().eq('name', name)
 }
 
-export async function manageUsers(payload) {
-  if (!supabase) return { data: null, error: new Error('Supabase no está configurado.') }
-
-  return supabase.functions.invoke('admin-users', { body: payload })
-}
-
 export async function getOrCreateConversation(conversation) {
   if (!supabase) return { data: null, error: new Error('Supabase no está configurado.') }
 
