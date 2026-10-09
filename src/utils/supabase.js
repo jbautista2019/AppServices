@@ -11,7 +11,9 @@ export const supabase = isSupabaseConfigured ? createClient(supabaseUrl, supabas
 const SERVICE_COLUMNS = 'id, title, provider_id, provider_name, category, location, rating, starting_price, image_url, description, offers_local, offers_home'
 const SERVICE_DETAIL_COLUMNS = `${SERVICE_COLUMNS}, is_active, created_at`
 
-export const SERVICE_GALLERY_MAX = 4
+// Una publicación admite hasta 3 fotos: la principal (image_url) y 2 adicionales (gallery_urls).
+export const SERVICE_PHOTOS_MAX = 3
+export const SERVICE_GALLERY_MAX = SERVICE_PHOTOS_MAX - 1
 
 // Favoritos: cada persona ve y modifica solo los suyos (lo garantiza RLS). Si la tabla aún no existe se explica cómo crearla.
 function friendlyFavoritesError(error) {

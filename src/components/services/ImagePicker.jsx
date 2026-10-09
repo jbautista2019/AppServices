@@ -29,7 +29,7 @@ export default function ImagePicker({ currentUrl, file, onChange, onRemoveCurren
   const shownUrl = previewUrl || (removed ? '' : currentUrl)
 
   return <div className="image-picker">
-    <span className="image-picker-label">Imagen (opcional)</span>
+    <span className="image-picker-label">Foto principal (opcional)</span>
     <div className="image-picker-body">
     {shownUrl && <img className="image-picker-preview" src={shownUrl} alt="Vista previa de la imagen del servicio" />}
     <div className="image-picker-actions">

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { SERVICE_GALLERY_MAX, SERVICE_IMAGE_TYPES, validateServiceImage } from '../../utils/supabase'
+import { SERVICE_GALLERY_MAX, SERVICE_IMAGE_TYPES, SERVICE_PHOTOS_MAX, validateServiceImage } from '../../utils/supabase'
 
 // Fotos adicionales de la publicación. `urls` son las ya guardadas y `files` las nuevas aún sin subir; entre ambas hay un máximo.
 export default function GalleryPicker({ urls = [], files = [], onUrlsChange, onFilesChange }) {
@@ -22,14 +22,14 @@ export default function GalleryPicker({ urls = [], files = [], onUrlsChange, onF
       const validationError = validateServiceImage(file)
       if (validationError) message = validationError
       else if (accepted.length < remaining) accepted.push(file)
-      else message = `Puedes agregar hasta ${SERVICE_GALLERY_MAX} fotos adicionales.`
+      else message = `Una publicación admite hasta ${SERVICE_PHOTOS_MAX} fotos: la principal y ${SERVICE_GALLERY_MAX} adicionales.`
     }
     setError(message)
     if (accepted.length) onFilesChange([...files, ...accepted])
   }
 
   return <div className="gallery-picker field-wide">
-    <span className="image-picker-label">Fotos adicionales (opcional)</span>
+    <span className="image-picker-label">Fotos adicionales (opcional · hasta {SERVICE_GALLERY_MAX})</span>
     <ul className="gallery-picker-list">
       {urls.map((url) => <li key={url}>
         <img src={url} alt="Foto adicional guardada" />
@@ -43,7 +43,7 @@ export default function GalleryPicker({ urls = [], files = [], onUrlsChange, onF
         <button type="button" className="gallery-picker-add" onClick={() => inputRef.current?.click()}>+ Agregar</button>
       </li>}
     </ul>
-    <small>{total} de {SERVICE_GALLERY_MAX} · JPG, PNG o WebP · máx. 5 MB cada una</small>
+    <small>{total} de {SERVICE_GALLERY_MAX} adicionales · máximo {SERVICE_PHOTOS_MAX} fotos en total con la principal · JPG, PNG o WebP · máx. 5 MB cada una</small>
     <input ref={inputRef} type="file" multiple accept={SERVICE_IMAGE_TYPES.join(',')} hidden onChange={handleSelect} />
     {error && <p className="image-picker-error" role="alert">{error}</p>}
   </div>
