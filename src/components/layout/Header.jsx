@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { getPendingReportNotifications, getUnreadMessageNotifications, isCategoryAdmin, REPORT_REASONS, REPORTS_CHANGED_EVENT, supabase } from '../../utils/supabase'
+import { getPendingReportNotifications, getUnreadMessageNotifications, getUnreadPlatformNotifications, markPlatformNotificationsRead, isCategoryAdmin, REPORT_REASONS, REPORTS_CHANGED_EVENT, supabase } from '../../utils/supabase'
 
 export default function Header() {
   const location = useLocation()
@@ -13,7 +13,8 @@ export default function Header() {
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [reportNotifications, setReportNotifications] = useState([])
-  const totalNotifications = notifications.length + reportNotifications.length
+  const [platformNotifications, setPlatformNotifications] = useState([])
+  const totalNotifications = notifications.length + reportNotifications.length + platformNotifications.length
   const [canManageCategories, setCanManageCategories] = useState(false)
   const [categoryAdminChecked, setCategoryAdminChecked] = useState(false)
   const profileMenuRef = useRef(null)
@@ -90,6 +91,39 @@ export default function Header() {
       supabase.removeChannel(channel)
     }
   }, [session?.user?.id])
+
+  useEffect(() => {
+    const userId = session?.user?.id
+    if (!userId || !supabase) {
+      setPlatformNotifications([])
+      return
+    }
+
+    let active = true
+    async function refreshPlatformNotifications() {
+      const { data, error } = await getUnreadPlatformNotifications(userId)
+      if (active && !error) setPlatformNotifications(data || [])
+    }
+
+    refreshPlatformNotifications()
+    const channel = supabase
+      .channel(`platform-notifications-${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_notifications', filter: `user_id=eq.${userId}` }, refreshPlatformNotifications)
+      .subscribe()
+    window.addEventListener('focus', refreshPlatformNotifications)
+
+    return () => {
+      active = false
+      window.removeEventListener('focus', refreshPlatformNotifications)
+      supabase.removeChannel(channel)
+    }
+  }, [session?.user?.id])
+
+  async function openPlatformNotification(notification) {
+    setNotificationsOpen(false)
+    setPlatformNotifications((current) => current.filter((item) => item.id !== notification.id))
+    await markPlatformNotificationsRead([notification.id])
+  }
 
   useEffect(() => {
     const userId = session?.user?.id
@@ -187,6 +221,10 @@ export default function Header() {
           </button>
           {notificationsOpen && <section className="header-notifications-menu" id="header-notifications-menu" aria-label="Notificaciones de mensajes">
             <div className="header-notifications-heading"><strong>Notificaciones</strong><span>{totalNotifications} sin leer</span></div>
+            {platformNotifications.length > 0 && <div className="header-notifications-list">{platformNotifications.map((notification) => <Link className="header-notification-item" key={notification.id} to={notification.link || '/perfil'} onClick={() => openPlatformNotification(notification)}>
+              <span className="header-notification-dot header-notification-dot--alert" aria-hidden="true" />
+              <span><strong>{notification.title}</strong>{notification.body && <span>{notification.body}</span>}</span>
+            </Link>)}</div>}
             {reportNotifications.length > 0 && <div className="header-notifications-list">
               <Link className="header-notification-item" to="/admin/reportes" onClick={() => setNotificationsOpen(false)}>
                 <span className="header-notification-dot header-notification-dot--alert" aria-hidden="true" />
@@ -202,7 +240,7 @@ export default function Header() {
                 <span className="header-notification-dot" aria-hidden="true" />
                 <span><strong>{senderName}</strong><small>{conversation.service_title}</small><span>{notification.content}</span></span>
               </Link>
-            })}</div> : !reportNotifications.length && <p className="header-notifications-empty">No tienes mensajes nuevos.</p>}
+            })}</div> : !reportNotifications.length && !platformNotifications.length && <p className="header-notifications-empty">No tienes mensajes nuevos.</p>}
             <Link className="header-notifications-all" to="/mensajes" onClick={() => setNotificationsOpen(false)}>Ver mensajes</Link>
           </section>}
         </div>}

@@ -1,4 +1,4 @@
--- Reportes de publicaciones. Ejecutar en Supabase > SQL Editor (idempotente).
+-- Reportes de publicaciones. Ejecutar en Supabase > SQL Editor (idempotente), DESPUÉS de supabase/user-notifications.sql.
 --
 -- Cualquier usuario con sesión puede reportar una publicación ajena una sola vez.
 -- Los reportes los crea submit_service_report(); no se insertan directamente.
@@ -175,15 +175,37 @@ returns void
 language plpgsql
 security definer
 set search_path = ''
-as $$
+as $
+declare
+  svc record;
 begin
   if not (select public.is_category_admin()) then
     raise exception 'No tienes permiso para moderar publicaciones.';
   end if;
 
+  select id, provider_id, title, is_active, hidden_by_admin into svc from public.services where id = p_service_id;
+  if not found then
+    raise exception 'La publicación no existe.';
+  end if;
+
   update public.services set is_active = p_active, hidden_by_admin = not p_active where id = p_service_id;
+
+  -- Avisa al dueño solo si el estado de moderación cambió.
+  if svc.provider_id is not null and svc.hidden_by_admin is distinct from (not p_active) then
+    insert into public.user_notifications (user_id, type, title, body, link)
+    values (
+      svc.provider_id,
+      'service_moderation',
+      case when p_active then 'Tu publicación volvió a estar visible' else 'Ocultamos tu publicación' end,
+      case when p_active
+        then format('Revisamos «%s» y volvió a mostrarse en la plataforma.', svc.title)
+        else format('«%s» fue ocultada tras revisar reportes de la comunidad. Mientras esté oculta no puedes reactivarla.', svc.title)
+      end,
+      '/mis-servicios'
+    );
+  end if;
 end
-$$;
+$;
 
 revoke all on function public.admin_set_service_active(bigint, boolean) from public;
 grant execute on function public.admin_set_service_active(bigint, boolean) to authenticated;

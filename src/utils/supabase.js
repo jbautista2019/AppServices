@@ -379,6 +379,24 @@ export async function getPendingReportNotifications() {
     .limit(50)
 }
 
+export async function getUnreadPlatformNotifications(userId) {
+  if (!supabase || !userId) return { data: [], error: null }
+
+  return supabase
+    .from('user_notifications')
+    .select('id, type, title, body, link, created_at')
+    .is('read_at', null)
+    .order('created_at', { ascending: false })
+    .limit(50)
+}
+
+export async function markPlatformNotificationsRead(ids) {
+  if (!supabase) return { error: null }
+
+  const { error } = await supabase.rpc('mark_notifications_read', { p_ids: ids?.length ? ids : null })
+  return { error }
+}
+
 export const REPORTS_CHANGED_EVENT = 'service-reports-changed'
 
 export async function setReportStatus(reportId, status) {
