@@ -152,7 +152,7 @@ returns void
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 declare
   rep record;
 begin
@@ -186,7 +186,7 @@ begin
     );
   end if;
 end
-$;
+$$;
 
 revoke all on function public.admin_set_report_status(uuid, text) from public;
 grant execute on function public.admin_set_report_status(uuid, text) to authenticated;
@@ -197,7 +197,7 @@ returns void
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 declare
   svc record;
 begin
@@ -227,7 +227,7 @@ begin
     );
   end if;
 end
-$;
+$$;
 
 revoke all on function public.admin_set_service_active(bigint, boolean) from public;
 grant execute on function public.admin_set_service_active(bigint, boolean) to authenticated;
