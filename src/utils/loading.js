@@ -5,6 +5,7 @@ const ARM_WINDOW_MS = 1200
 
 let pending = 0
 let armedUntil = 0
+let silent = 0
 const listeners = new Set()
 
 function notify() {
@@ -24,8 +25,18 @@ export function armLoading() {
   armedUntil = Date.now() + ARM_WINDOW_MS
 }
 
+// Ejecuta una acción de la persona sin mostrar el indicador global (p. ej. el corazón de favoritos, que ya responde al instante).
+export async function withoutLoading(action) {
+  silent += 1
+  try {
+    return await action()
+  } finally {
+    silent -= 1
+  }
+}
+
 export function trackedFetch(...args) {
-  if (Date.now() > armedUntil) return fetch(...args)
+  if (silent > 0 || Date.now() > armedUntil) return fetch(...args)
 
   pending += 1
   notify()

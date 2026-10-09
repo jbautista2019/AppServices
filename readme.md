@@ -66,7 +66,7 @@ Todos son idempotentes y se ejecutan en **SQL Editor**. El orden importa porque 
 
 1. `supabase/schema.sql` (servicios, categorías, chat y `category_admins`)
 2. `supabase/seed.sql` (datos de prueba, opcional)
-3. `supabase/service-modality.sql`, `supabase/communes.sql`, `supabase/storage-service-images.sql`, `supabase/service-gallery.sql`, `supabase/provider-profiles.sql`
+3. `supabase/service-modality.sql`, `supabase/communes.sql`, `supabase/storage-service-images.sql`, `supabase/service-gallery.sql`, `supabase/provider-profiles.sql`, `supabase/favorites.sql`
 4. `supabase/chat-upgrade.sql` (eliminar conversaciones; usa las tablas del chat)
 5. `supabase/reviews.sql` (valoraciones; usa `conversations` y `messages`)
 6. `supabase/user-notifications.sql` (notificaciones de la plataforma)
@@ -100,6 +100,8 @@ Necesitas dos cuentas con sesión, **A** (profesional) y **B** (cliente), y una 
 | 19 | A | Subir una publicación con 3 fotos adicionales | El detalle muestra la portada y miniaturas que cambian la foto principal |
 | 20 | A | En Perfil > Datos personales, agregar teléfono y descripción | `/profesional/<id>` los muestra con el botón de WhatsApp; el detalle enlaza al perfil |
 | 21 | B | En la búsqueda, ordenar por precio y por mejor evaluados | El listado cambia de orden de forma coherente |
+| 22 | B | Tocar el ♡ de dos servicios y abrir el corazón del encabezado | Ambos aparecen (el último guardado primero), con contador; la × los quita y el ♡ de la tarjeta se desmarca |
+| 23 | visitante | Tocar el ♡ de una tarjeta sin sesión | Se abre el inicio de sesión |
 
 ### Estructura del frontend
 

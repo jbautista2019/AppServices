@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import Footer from '../components/layout/Footer'
+import { FavoritesProvider } from '../context/FavoritesContext'
 import Header from '../components/layout/Header'
 import LoadingOverlay from '../components/layout/LoadingOverlay'
 import AccountPage from '../pages/account/AccountPage'
@@ -56,7 +57,7 @@ export default function App() {
     return () => { cancelled = true }
   }, [refreshServices])
 
-  return <>
+  return <FavoritesProvider>
     <Header services={services} categories={categories} />
     <Routes location={pageLocation}>
       <Route path="/" element={<HomePage services={services} categories={categories} loading={loading} />} />
@@ -78,5 +79,5 @@ export default function App() {
     {registrationOpen && <RegistrationModal onClose={() => navigate(backgroundLocation ? `${backgroundLocation.pathname}${backgroundLocation.search}${backgroundLocation.hash}` : '/', { replace: true })} />}
     <Footer categories={categories} />
     <LoadingOverlay />
-  </>
+  </FavoritesProvider>
 }

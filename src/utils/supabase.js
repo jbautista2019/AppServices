@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { trackedFetch } from './loading'
+import { trackedFetch, withoutLoading } from './loading'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -12,6 +12,41 @@ const SERVICE_COLUMNS = 'id, title, provider_id, provider_name, category, locati
 const SERVICE_DETAIL_COLUMNS = `${SERVICE_COLUMNS}, is_active, created_at`
 
 export const SERVICE_GALLERY_MAX = 4
+
+// Favoritos: cada persona ve y modifica solo los suyos (lo garantiza RLS). Si la tabla aún no existe se explica cómo crearla.
+function friendlyFavoritesError(error) {
+  if (!error) return null
+  if (error.code === 'PGRST205' || error.code === '42P01' || /schema cache/i.test(error.message || '')) {
+    return new Error('Falta habilitar los favoritos en Supabase. Ejecuta supabase/favorites.sql.')
+  }
+  return new Error('No se pudo actualizar tus favoritos. Inténtalo nuevamente.')
+}
+
+export async function getFavorites() {
+  if (!supabase) return { data: [], error: null }
+
+  const { data, error } = await supabase
+    .from('service_favorites')
+    .select('service_id, created_at, services(id, title, provider_name, category, location, rating, starting_price, image_url)')
+    .order('created_at', { ascending: false })
+
+  return { data: data || [], error: friendlyFavoritesError(error) }
+}
+
+export async function addFavorite(userId, serviceId) {
+  if (!supabase || !userId) return { error: new Error('Inicia sesión para guardar favoritos.') }
+
+  const { error } = await withoutLoading(() => supabase.from('service_favorites').insert({ user_id: userId, service_id: serviceId }))
+  // 23505 = ya estaba guardado: el resultado es el mismo que se buscaba.
+  return { error: error?.code === '23505' ? null : friendlyFavoritesError(error) }
+}
+
+export async function removeFavorite(userId, serviceId) {
+  if (!supabase || !userId) return { error: new Error('Inicia sesión para quitar favoritos.') }
+
+  const { error } = await withoutLoading(() => supabase.from('service_favorites').delete().eq('user_id', userId).eq('service_id', serviceId))
+  return { error: friendlyFavoritesError(error) }
+}
 
 // Si aún no se ejecutó supabase/service-gallery.sql la columna no existe: se repite la consulta sin ella.
 const isMissingGalleryColumn = (error) => error?.code === '42703' || /gallery_urls/.test(error?.message || '')

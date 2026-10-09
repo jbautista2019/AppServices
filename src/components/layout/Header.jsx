@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import SearchAutocomplete from '../common/SearchAutocomplete'
+import { useFavorites } from '../../context/FavoritesContext'
 import { addSearchHistory } from '../../utils/searchHistory'
 import { getPendingReportNotifications, getUnreadMessageNotifications, getUnreadPlatformNotifications, markPlatformNotificationsRead, isCategoryAdmin, REPORT_REASONS, REPORTS_CHANGED_EVENT, supabase } from '../../utils/supabase'
 
@@ -13,6 +14,10 @@ export default function Header({ services = [], categories = [] }) {
   const [session, setSession] = useState(null)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [favoritesOpen, setFavoritesOpen] = useState(false)
+  const { items: favoriteEntries, toggle: toggleFavorite } = useFavorites()
+  // Si una publicación ya no es visible (pausada u oculta) no se lista, aunque siga guardada.
+  const favorites = favoriteEntries.filter((entry) => entry.services)
   const [notifications, setNotifications] = useState([])
   const [reportNotifications, setReportNotifications] = useState([])
   const [platformNotifications, setPlatformNotifications] = useState([])
@@ -21,6 +26,7 @@ export default function Header({ services = [], categories = [] }) {
   const [categoryAdminChecked, setCategoryAdminChecked] = useState(false)
   const profileMenuRef = useRef(null)
   const notificationsRef = useRef(null)
+  const favoritesRef = useRef(null)
 
   useEffect(() => {
     if (!supabase) {
@@ -175,20 +181,23 @@ export default function Header({ services = [], categories = [] }) {
   useEffect(() => {
     setProfileMenuOpen(false)
     setNotificationsOpen(false)
+    setFavoritesOpen(false)
   }, [location.pathname, location.search])
 
   useEffect(() => {
-    if (!profileMenuOpen && !notificationsOpen) return
+    if (!profileMenuOpen && !notificationsOpen && !favoritesOpen) return
 
     function handlePointerDown(event) {
       if (!profileMenuRef.current?.contains(event.target)) setProfileMenuOpen(false)
       if (!notificationsRef.current?.contains(event.target)) setNotificationsOpen(false)
+      if (!favoritesRef.current?.contains(event.target)) setFavoritesOpen(false)
     }
 
     function handleKeyDown(event) {
       if (event.key === 'Escape') {
         setProfileMenuOpen(false)
         setNotificationsOpen(false)
+        setFavoritesOpen(false)
       }
     }
 
@@ -198,7 +207,7 @@ export default function Header({ services = [], categories = [] }) {
       document.removeEventListener('pointerdown', handlePointerDown)
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [notificationsOpen, profileMenuOpen])
+  }, [notificationsOpen, profileMenuOpen, favoritesOpen])
 
   const displayName = session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split('@')[0] || 'Mi cuenta'
   const initials = displayName.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase()
@@ -222,8 +231,27 @@ export default function Header({ services = [], categories = [] }) {
         <Link className={isActive('/buscar') ? 'header-nav-active' : ''} to="/buscar">Categorías</Link>
       </nav>
       <div className="header-actions">
+        {session && <div className="header-notifications-wrap header-favorites-wrap" ref={favoritesRef}>
+          <button className="header-notifications-button" type="button" aria-label={favorites.length ? `Favoritos, ${favorites.length} guardados` : 'Favoritos'} aria-haspopup="true" aria-expanded={favoritesOpen} aria-controls="header-favorites-menu" onClick={() => { setFavoritesOpen((open) => !open); setNotificationsOpen(false); setProfileMenuOpen(false) }}>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill={favoritesOpen ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
+            {favorites.length > 0 && <span className="header-notifications-badge header-favorites-badge">{favorites.length > 99 ? '99+' : favorites.length}</span>}
+          </button>
+          {favoritesOpen && <section className="header-notifications-menu header-favorites-menu" id="header-favorites-menu" aria-label="Mis favoritos">
+            <div className="header-notifications-heading"><strong>Mis favoritos</strong><span>{favorites.length} {favorites.length === 1 ? 'guardado' : 'guardados'}</span></div>
+            {favorites.length ? <div className="header-notifications-list">{favorites.map((entry) => {
+              const service = entry.services
+              return <div className="header-favorite-item" key={entry.service_id}>
+                <Link className="header-favorite-link" to={`/servicio/${service.id}`} onClick={() => setFavoritesOpen(false)}>
+                  {service.image_url ? <img src={service.image_url} alt="" /> : <span className="header-favorite-placeholder" aria-hidden="true">♥</span>}
+                  <span><strong>{service.title}</strong><small>{service.provider_name} · {service.category}</small><span>{new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(service.starting_price || 0)}</span></span>
+                </Link>
+                <button className="header-favorite-remove" type="button" aria-label={`Quitar «${service.title}» de favoritos`} title="Quitar de favoritos" onClick={() => toggleFavorite(service)}>×</button>
+              </div>
+            })}</div> : <p className="header-notifications-empty">Aún no tienes favoritos. Toca el ♡ de un servicio para guardarlo.</p>}
+          </section>}
+        </div>}
         {session && <div className="header-notifications-wrap" ref={notificationsRef}>
-          <button className="header-notifications-button" type="button" aria-label={totalNotifications ? `Notificaciones, ${totalNotifications} sin leer` : 'Notificaciones'} aria-haspopup="true" aria-expanded={notificationsOpen} aria-controls="header-notifications-menu" onClick={() => { setNotificationsOpen((open) => !open); setProfileMenuOpen(false) }}>
+          <button className="header-notifications-button" type="button" aria-label={totalNotifications ? `Notificaciones, ${totalNotifications} sin leer` : 'Notificaciones'} aria-haspopup="true" aria-expanded={notificationsOpen} aria-controls="header-notifications-menu" onClick={() => { setNotificationsOpen((open) => !open); setProfileMenuOpen(false); setFavoritesOpen(false) }}>
             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" /><path d="M10 21h4" /></svg>
             {totalNotifications > 0 && <span className="header-notifications-badge">{totalNotifications > 99 ? '99+' : totalNotifications}</span>}
           </button>
