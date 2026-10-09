@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { getUnreadMessageNotifications, isCategoryAdmin, supabase } from '../../utils/supabase'
+import { getPendingReportNotifications, getUnreadMessageNotifications, isCategoryAdmin, REPORT_REASONS, REPORTS_CHANGED_EVENT, supabase } from '../../utils/supabase'
 
 export default function Header() {
   const location = useLocation()
@@ -12,6 +12,8 @@ export default function Header() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [notifications, setNotifications] = useState([])
+  const [reportNotifications, setReportNotifications] = useState([])
+  const totalNotifications = notifications.length + reportNotifications.length
   const [canManageCategories, setCanManageCategories] = useState(false)
   const [categoryAdminChecked, setCategoryAdminChecked] = useState(false)
   const profileMenuRef = useRef(null)
@@ -90,6 +92,35 @@ export default function Header() {
   }, [session?.user?.id])
 
   useEffect(() => {
+    const userId = session?.user?.id
+    if (!userId || !supabase || !canManageCategories) {
+      setReportNotifications([])
+      return
+    }
+
+    let active = true
+    async function refreshReports() {
+      const { data, error } = await getPendingReportNotifications()
+      if (active && !error) setReportNotifications(data || [])
+    }
+
+    refreshReports()
+    const channel = supabase
+      .channel(`report-notifications-${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'service_reports' }, refreshReports)
+      .subscribe()
+    window.addEventListener('focus', refreshReports)
+    window.addEventListener(REPORTS_CHANGED_EVENT, refreshReports)
+
+    return () => {
+      active = false
+      window.removeEventListener('focus', refreshReports)
+      window.removeEventListener(REPORTS_CHANGED_EVENT, refreshReports)
+      supabase.removeChannel(channel)
+    }
+  }, [session?.user?.id, canManageCategories])
+
+  useEffect(() => {
     if (location.pathname === '/buscar') setSearchText(new URLSearchParams(location.search).get('q') || '')
   }, [location.pathname, location.search])
 
@@ -150,13 +181,19 @@ export default function Header() {
       </nav>
       <div className="header-actions">
         {session && <div className="header-notifications-wrap" ref={notificationsRef}>
-          <button className="header-notifications-button" type="button" aria-label={notifications.length ? `Notificaciones, ${notifications.length} mensajes sin leer` : 'Notificaciones'} aria-haspopup="true" aria-expanded={notificationsOpen} aria-controls="header-notifications-menu" onClick={() => { setNotificationsOpen((open) => !open); setProfileMenuOpen(false) }}>
+          <button className="header-notifications-button" type="button" aria-label={totalNotifications ? `Notificaciones, ${totalNotifications} sin leer` : 'Notificaciones'} aria-haspopup="true" aria-expanded={notificationsOpen} aria-controls="header-notifications-menu" onClick={() => { setNotificationsOpen((open) => !open); setProfileMenuOpen(false) }}>
             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" /><path d="M10 21h4" /></svg>
-            {notifications.length > 0 && <span className="header-notifications-badge">{notifications.length > 99 ? '99+' : notifications.length}</span>}
+            {totalNotifications > 0 && <span className="header-notifications-badge">{totalNotifications > 99 ? '99+' : totalNotifications}</span>}
           </button>
           {notificationsOpen && <section className="header-notifications-menu" id="header-notifications-menu" aria-label="Notificaciones de mensajes">
-            <div className="header-notifications-heading"><strong>Notificaciones</strong><span>{notifications.length} sin leer</span></div>
-            {notifications.length ? <div className="header-notifications-list">{notifications.map((notification) => {
+            <div className="header-notifications-heading"><strong>Notificaciones</strong><span>{totalNotifications} sin leer</span></div>
+            {reportNotifications.length > 0 && <div className="header-notifications-list">
+              <Link className="header-notification-item" to="/admin/reportes" onClick={() => setNotificationsOpen(false)}>
+                <span className="header-notification-dot header-notification-dot--alert" aria-hidden="true" />
+                <span><strong>{reportNotifications.length === 1 ? '1 publicación reportada' : `${reportNotifications.length} publicaciones reportadas`}</strong>{reportNotifications.slice(0, 3).map((report) => <small key={report.id}>{report.services?.title || 'Publicación'} · {REPORT_REASONS.find((item) => item.value === report.reason)?.label || report.reason}</small>)}<span>Pendientes de revisión</span></span>
+              </Link>
+            </div>}
+            {notifications.length ?<div className="header-notifications-list">{notifications.map((notification) => {
               const conversation = notification.conversations
               const senderName = String(conversation.client_id) === String(session.user.id)
                 ? conversation.provider_name || 'Profesional'
@@ -165,7 +202,7 @@ export default function Header() {
                 <span className="header-notification-dot" aria-hidden="true" />
                 <span><strong>{senderName}</strong><small>{conversation.service_title}</small><span>{notification.content}</span></span>
               </Link>
-            })}</div> : <p className="header-notifications-empty">No tienes mensajes nuevos.</p>}
+            })}</div> : !reportNotifications.length && <p className="header-notifications-empty">No tienes mensajes nuevos.</p>}
             <Link className="header-notifications-all" to="/mensajes" onClick={() => setNotificationsOpen(false)}>Ver mensajes</Link>
           </section>}
         </div>}
@@ -182,7 +219,10 @@ export default function Header() {
             </div>
             <nav className="header-profile-links" aria-label="Opciones de mi cuenta">
               <Link to="/perfil" state={{ profileSection: 'profile', profileEditing: true }} onClick={() => setProfileMenuOpen(false)}>Mi perfil</Link>
-              {categoryAdminChecked && canManageCategories ? <Link to="/admin/categorias" onClick={() => setProfileMenuOpen(false)}>Administrar categorías</Link> : categoryAdminChecked && <>
+              {categoryAdminChecked && canManageCategories ? <>
+                <Link to="/admin/categorias" onClick={() => setProfileMenuOpen(false)}>Administrar categorías</Link>
+                <Link to="/admin/reportes" onClick={() => setProfileMenuOpen(false)}>Reportes de publicaciones</Link>
+              </> : categoryAdminChecked && <>
                 <Link to="/mis-servicios" onClick={() => setProfileMenuOpen(false)}>Mis servicios</Link>
                 <Link to="/mensajes" onClick={() => setProfileMenuOpen(false)}>Mensajes</Link>
               </>}

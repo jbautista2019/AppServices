@@ -1830,3 +1830,5 @@
   color: var(--muted);
   font-size: 12px;
 }
+
+.header-notification-dot--alert { background: #d93025; }

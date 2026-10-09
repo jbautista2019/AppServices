@@ -333,6 +333,67 @@ export async function getProviderRatingSummary(userId) {
   return { data: { average: total / data.length, count: data.length, distribution }, error: null }
 }
 
+export const REPORT_REASONS = [
+  { value: 'spam', label: 'Spam o publicidad engañosa' },
+  { value: 'fraud', label: 'Posible estafa o fraude' },
+  { value: 'inappropriate', label: 'Contenido inapropiado' },
+  { value: 'misleading', label: 'Información falsa o engañosa' },
+  { value: 'other', label: 'Otro motivo' },
+]
+
+export async function reportService(serviceId, reason, details) {
+  if (!supabase || !serviceId) return { error: new Error('No se pudo identificar la publicación.') }
+
+  const { error } = await supabase.rpc('submit_service_report', { p_service_id: serviceId, p_reason: reason, p_details: details || null })
+  if (error && (error.code === 'PGRST202' || /schema cache/i.test(error.message || ''))) {
+    return { error: new Error('Falta habilitar los reportes en Supabase. Ejecuta supabase/service-reports.sql.') }
+  }
+  return { error: error ? new Error(error.message) : null }
+}
+
+function friendlyReportAdminError(error) {
+  if (!error) return null
+  if (error.code === 'PGRST202' || /schema cache/i.test(error.message || '')) {
+    return new Error('Falta habilitar la moderación en Supabase. Ejecuta supabase/service-reports.sql.')
+  }
+  return new Error(error.message)
+}
+
+export async function listServiceReports() {
+  if (!supabase) return { data: [], error: new Error('Supabase no está configurado.') }
+
+  const { data, error } = await supabase.rpc('admin_list_service_reports')
+  return { data: data || [], error: friendlyReportAdminError(error) }
+}
+
+// Reportes pendientes para la campana de notificaciones del administrador (la política de RLS ya limita la lectura a administradores).
+export async function getPendingReportNotifications() {
+  if (!supabase) return { data: [], error: null }
+
+  return supabase
+    .from('service_reports')
+    .select('id, service_id, reason, created_at, services(title)')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+    .limit(50)
+}
+
+export const REPORTS_CHANGED_EVENT = 'service-reports-changed'
+
+export async function setReportStatus(reportId, status) {
+  if (!supabase) return { error: new Error('Supabase no está configurado.') }
+
+  const { error } = await supabase.rpc('admin_set_report_status', { p_report_id: reportId, p_status: status })
+  return { error: friendlyReportAdminError(error) }
+}
+
+export async function setServiceActive(serviceId, active) {
+  if (!supabase) return { error: new Error('Supabase no está configurado.') }
+
+  const { error } = await supabase.rpc('admin_set_service_active', { p_service_id: serviceId, p_active: active })
+  return { error: friendlyReportAdminError(error) }
+}
+
 // Valoraciones recibidas en los servicios de un prestador, con quién las dejó, su comentario y el servicio valorado.
 export async function getProviderReviews(userId) {
   if (!supabase || !userId) return { data: [], error: null }
