@@ -59,7 +59,7 @@ export default function ProviderProfilePage() {
     </header>
     <section aria-labelledby="provider-services-title">
       <h2 id="provider-services-title">Servicios publicados ({services.length})</h2>
-      {services.length ? <div className="provider-profile-services">{services.map((service) => <ServiceCard service={service} key={service.id} />)}</div> : <p>No tiene servicios activos por ahora.</p>}
+      {services.length ? <div className="listing-grid provider-profile-services">{services.map((service) => <ServiceCard service={service} key={service.id} />)}</div> : <p>No tiene servicios activos por ahora.</p>}
     </section>
   </main>
 }

@@ -2215,8 +2215,6 @@ button.account-module-card {
 }
 
 .provider-profile-services {
-  display: grid;
-  gap: 16px;
   margin-top: 16px;
 }
 

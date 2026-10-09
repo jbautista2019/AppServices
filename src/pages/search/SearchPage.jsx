@@ -136,7 +136,7 @@ export default function SearchPage({ services, categories, loading, loadError, e
           </div>
           {loadError && <p className="data-notice">{loadError}</p>}
           {searching && <p className="data-notice" role="status">Buscando...</p>}
-          {!searching && visibleServices.map((service) => <ServiceCard service={service} key={service.id} related={Boolean(ranking) && !ranking.get(String(service.id))?.text} />)}
+          {!searching && visibleServices.length > 0 && <div className="listing-grid">{visibleServices.map((service) => <ServiceCard service={service} key={service.id} related={Boolean(ranking) && !ranking.get(String(service.id))?.text} />)}</div>}
           {!loading && !searching && !filtered.length && <div className="empty-state"><strong>No encontramos publicaciones</strong><p>Cuando haya servicios activos en Supabase, aparecerán aquí.</p></div>}
           {pageCount > 1 && <nav className="pagination" aria-label="Paginación de servicios"><button type="button" aria-label="Página anterior" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1}>←</button>{Array.from({ length: pageCount }, (_, index) => index + 1).map((page) => <button type="button" key={page} className={currentPage === page ? 'active' : ''} aria-current={currentPage === page ? 'page' : undefined} onClick={() => setCurrentPage(page)}>{page}</button>)}<button type="button" aria-label="Página siguiente" onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))} disabled={currentPage === pageCount}>→</button></nav>}
         </section>
