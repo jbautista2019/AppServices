@@ -97,7 +97,7 @@ Necesitas dos cuentas con sesión, **A** (profesional) y **B** (cliente), y una 
 | 16 | A | Eliminar la publicación | El reporte sigue en la pantalla del admin como «Eliminada por su dueño» |
 | 17 | usuario sin permisos | Abrir `/admin/reportes` | «Esta cuenta no tiene permiso» |
 | 18 | admin | Abrir **Administrar publicaciones** y buscar por título, profesional o comuna | Aparecen todas, también las pausadas y ocultas, con filtros y contador de reportes |
-| 19 | A | Subir una publicación con la foto principal y 2 adicionales (la tercera adicional no se deja agregar) | El detalle muestra las 3 fotos con miniaturas que cambian la foto principal |
+| 19 | A | Subir una publicación con la foto principal y 2 adicionales (la tercera adicional no se deja agregar) | El detalle muestra las 3 fotos: flechas ‹ › (circulares), contador, miniaturas, teclado ← →, deslizar en el móvil, y la foto se amplía al pasar el ratón |
 | 20 | A | En Perfil > Datos personales, agregar teléfono y descripción | `/profesional/<id>` los muestra con el botón de WhatsApp; el detalle enlaza al perfil |
 | 21 | B | En la búsqueda, ordenar por precio y por mejor evaluados | El listado cambia de orden de forma coherente |
 | 22 | B | Tocar el ♡ de dos servicios y abrir el corazón del encabezado | Ambos aparecen (el último guardado primero), con contador; la × los quita y el ♡ de la tarjeta se desmarca |
