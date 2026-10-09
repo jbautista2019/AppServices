@@ -44,7 +44,7 @@ as $$
     and (p_ids is null or id = any (p_ids));
 $$;
 
-revoke all on function public.mark_notifications_read(uuid[]) from public;
+revoke all on function public.mark_notifications_read(uuid[]) from public, anon;
 grant execute on function public.mark_notifications_read(uuid[]) to authenticated;
 
 -- Realtime: la campana del encabezado se actualiza en cuanto llega una notificación.

@@ -86,7 +86,7 @@ begin
 end
 $$;
 
-revoke all on function public.submit_service_report(bigint, text, text) from public;
+revoke all on function public.submit_service_report(bigint, text, text) from public, anon;
 grant execute on function public.submit_service_report(bigint, text, text) to authenticated;
 
 notify pgrst, 'reload schema';
@@ -144,7 +144,7 @@ begin
 end
 $$;
 
-revoke all on function public.admin_list_service_reports() from public;
+revoke all on function public.admin_list_service_reports() from public, anon;
 grant execute on function public.admin_list_service_reports() to authenticated;
 
 create or replace function public.admin_set_report_status(p_report_id uuid, p_status text)
@@ -188,7 +188,7 @@ begin
 end
 $$;
 
-revoke all on function public.admin_set_report_status(uuid, text) from public;
+revoke all on function public.admin_set_report_status(uuid, text) from public, anon;
 grant execute on function public.admin_set_report_status(uuid, text) to authenticated;
 
 -- Oculta (o vuelve a publicar) una publicación reportada.
@@ -229,7 +229,7 @@ begin
 end
 $$;
 
-revoke all on function public.admin_set_service_active(bigint, boolean) from public;
+revoke all on function public.admin_set_service_active(bigint, boolean) from public, anon;
 grant execute on function public.admin_set_service_active(bigint, boolean) to authenticated;
 
 notify pgrst, 'reload schema';
