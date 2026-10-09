@@ -2077,3 +2077,47 @@
   color: white;
   font-size: 14px;
 }
+
+/* Encabezado en móvil: dos filas (logo y acciones arriba, buscador de ancho completo debajo) para que el buscador sea usable.
+   Los menús de notificaciones y favoritos se anclan al encabezado (no al botón) y ocupan el ancho de la pantalla. */
+@media (max-width: 640px) {
+  .site-header {
+    height: auto;
+    padding: 8px 12px 10px;
+  }
+
+  .header-inner {
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    height: auto;
+  }
+
+  .header-inner > .brand {
+    order: 1;
+  }
+
+  .header-inner > .header-actions {
+    order: 2;
+    margin-left: auto;
+  }
+
+  .header-inner > .header-search {
+    order: 3;
+    flex: 1 1 100%;
+    max-width: none;
+  }
+
+  .header-notifications-wrap {
+    position: static;
+  }
+
+  .header-notifications-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-height: calc(100vh - 150px);
+    overflow-y: auto;
+  }
+}

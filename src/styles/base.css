@@ -179,3 +179,16 @@
     transition: none;
   }
 }
+
+/* Responsividad: valoración y datos del perfil en pantallas muy angostas */
+.review-card h1, .review-card p { overflow-wrap: anywhere; }
+.review-stars { flex-wrap: wrap; }
+@media (max-width: 480px) {
+  .review-card { padding: 20px; }
+  .review-stars button { font-size: 34px; }
+  .review-rating-label { flex-basis: 100%; margin: 4px 0 0; }
+}
+.profile-data > div { min-width: 0; }
+.profile-data dd { overflow-wrap: anywhere; }
+.profile-card-identity { min-width: 0; }
+.profile-card-identity p, .profile-card-identity h1 { overflow-wrap: anywhere; }
