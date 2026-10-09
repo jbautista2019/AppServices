@@ -74,6 +74,43 @@ npx --yes supabase functions deploy semantic-search
 
 Para ampliar el vocabulario agrega filas a `public.search_synonyms` (`term` es la cabeza del grupo y `synonym` cada palabra equivalente, en minúsculas y sin tildes). Los umbrales se ajustan al inicio de `search_services` (`p_min_similarity`, `semantic_margin`, pesos de texto/semántica).
 
+### Orden de los scripts SQL
+
+Todos son idempotentes y se ejecutan en **SQL Editor**. El orden importa porque unos dependen de las tablas de otros:
+
+1. `supabase/schema.sql` (servicios, categorías, chat y `category_admins`)
+2. `supabase/seed.sql` (datos de prueba, opcional)
+3. `supabase/service-modality.sql`, `supabase/communes.sql`, `supabase/storage-service-images.sql`
+4. `supabase/chat-upgrade.sql` (eliminar conversaciones; usa las tablas del chat)
+5. `supabase/reviews.sql` (valoraciones; usa `conversations` y `messages`)
+6. `supabase/user-notifications.sql` (notificaciones de la plataforma)
+7. `supabase/service-reports.sql` (reportes y moderación; usa `user_notifications` y `category_admins`)
+8. `supabase/semantic-search.sql` (búsqueda híbrida, opcional)
+
+### Lista de prueba del flujo completo
+
+Necesitas dos cuentas con sesión, **A** (profesional) y **B** (cliente), y una cuenta **admin** registrada en `category_admins`. Úsalas en ventanas separadas.
+
+| # | Quién | Acción | Resultado esperado |
+|---|---|---|---|
+| 1 | A | Crear una publicación | Aparece en la portada y en «Mis servicios» como *Publicado* |
+| 2 | A | Editar el título | El cambio se ve en el detalle |
+| 3 | A | Pausar la publicación | Pasa a *Pausado* y B ya no la encuentra en la búsqueda |
+| 4 | A | Reactivar | Vuelve a verse |
+| 5 | B | Abrir el detalle y pulsar **Contactar** | Se abre el chat con A; A recibe la notificación en la campana |
+| 6 | A | En el chat pulsar **Solicitar valoración** | B recibe un mensaje con el enlace `/valorar/…` |
+| 7 | B | Abrir el enlace, dar estrellas y comentario | A ve la valoración (con el comentario y quién la dejó) en Perfil > Valoraciones |
+| 8 | B | Abrir de nuevo el enlace | Dice que ya valoró; «Ver el servicio» aparece solo si la publicación está activa |
+| 9 | B | Reportar la publicación de A | Mensaje de agradecimiento; un segundo reporte da «Ya reportaste…» |
+| 10 | A | Intentar reportar su propia publicación | El botón no aparece |
+| 11 | admin | Mirar la campana | Aparece «1 publicación reportada» en rojo |
+| 12 | admin | Abrir **Reportes de publicaciones** | Un grupo con la publicación y el reporte de B |
+| 13 | admin | **Ocultar publicación** | A recibe la notificación «Ocultamos tu publicación»; en «Mis servicios» figura *Oculto por moderación* y no puede reanudarla |
+| 14 | admin | **Marcar revisado** | B recibe la notificación «Revisamos tu reporte»; el aviso del admin desaparece |
+| 15 | admin | **Mostrar publicación** | A recibe «volvió a estar visible» y puede pausar/reactivar de nuevo |
+| 16 | A | Eliminar la publicación | El reporte sigue en la pantalla del admin como «Eliminada por su dueño» |
+| 17 | usuario sin permisos | Abrir `/admin/reportes` | «Esta cuenta no tiene permiso» |
+
 ### Estructura del frontend
 
 ```text
