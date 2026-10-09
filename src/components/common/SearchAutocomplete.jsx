@@ -1,5 +1,5 @@
-import { useId, useMemo, useState } from 'react'
-import { buildSuggestions, clearSearchHistory, getSearchHistory, removeSearchHistory } from '../../utils/searchHistory'
+import { useEffect, useId, useMemo, useState } from 'react'
+import { buildSuggestions, clearSearchHistory, getSearchHistory, removeSearchHistory, subscribeSearchHistory } from '../../utils/searchHistory'
 
 const TYPE_LABELS = { category: 'Categoría', service: 'Servicio' }
 
@@ -10,6 +10,9 @@ export default function SearchAutocomplete({ value, onChange, onSelect, services
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
   const [history, setHistory] = useState(() => getSearchHistory())
+
+  // El historial lo modifican también el encabezado y la portada al buscar: se vuelve a leer cuando cambia, aunque este campo siga enfocado.
+  useEffect(() => subscribeSearchHistory(() => setHistory(getSearchHistory())), [])
 
   const term = value.trim()
   const items = useMemo(() => {

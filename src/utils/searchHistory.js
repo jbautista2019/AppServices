@@ -1,6 +1,8 @@
 // Historial de búsquedas guardado solo en este navegador (localStorage); nunca se envía al servidor.
 const HISTORY_KEY = 'oficios-cerca:search-history'
 export const HISTORY_LIMIT = 8
+// Se emite cada vez que cambia el historial para que todos los buscadores montados (encabezado y portada) se mantengan al día.
+export const SEARCH_HISTORY_CHANGED_EVENT = 'oficios-cerca:search-history-changed'
 export const SUGGESTION_LIMIT = 8
 
 function normalize(text) {
@@ -21,6 +23,18 @@ function writeHistory(items) {
     window.localStorage.setItem(HISTORY_KEY, JSON.stringify(items))
   } catch {
     // Almacenamiento bloqueado o lleno: el historial es solo una comodidad.
+  }
+  if (typeof window.dispatchEvent === 'function' && typeof Event === 'function') window.dispatchEvent(new Event(SEARCH_HISTORY_CHANGED_EVENT))
+}
+
+// Suscribe una función a los cambios del historial (de esta pestaña o de otra) y devuelve la forma de cancelarla.
+export function subscribeSearchHistory(listener) {
+  const onStorage = (event) => { if (!event.key || event.key === HISTORY_KEY) listener() }
+  window.addEventListener(SEARCH_HISTORY_CHANGED_EVENT, listener)
+  window.addEventListener('storage', onStorage)
+  return () => {
+    window.removeEventListener(SEARCH_HISTORY_CHANGED_EVENT, listener)
+    window.removeEventListener('storage', onStorage)
   }
 }
 
