@@ -12,6 +12,7 @@ import CategoriesAdminPage from '../pages/admin/CategoriesAdminPage'
 import HomePage from '../pages/home/HomePage'
 import MessagesPage from '../pages/messages/MessagesPage'
 import ProvidersPage from '../pages/providers/ProvidersPage'
+import ProviderProfilePage from '../pages/providers/ProviderProfilePage'
 import SearchPage from '../pages/search/SearchPage'
 import ReviewPage from '../pages/reviews/ReviewPage'
 import ServiceDetailPage from '../pages/services/ServiceDetailPage'
@@ -64,6 +65,7 @@ export default function App() {
       <Route path="/servicio/:id/editar" element={<ServiceDetailPage services={services} loading={loading} loadError={loadError} />} />
       <Route path="/valorar/:requestId" element={<ReviewPage />} />
       <Route path="/prestadores" element={<ProvidersPage />} />
+      <Route path="/profesional/:id" element={<ProviderProfilePage />} />
       <Route path="/perfil" element={<ProfilePage />} />
       <Route path="/mis-servicios" element={<MyServicesRoute />} />
       <Route path="/mensajes" element={<MessagesPage />} />

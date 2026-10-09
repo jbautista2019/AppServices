@@ -39,6 +39,42 @@ export async function getUserServices(userId) {
   return { data, error }
 }
 
+// Perfil público del profesional (descripción y teléfono). Si la tabla aún no existe se trata como «sin perfil».
+export async function getProviderProfile(userId) {
+  if (!supabase || !userId) return { data: null, error: null }
+
+  const { data, error } = await supabase
+    .from('provider_profiles')
+    .select('user_id, bio, phone')
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  return { data, error }
+}
+
+export async function saveProviderProfile(userId, { bio, phone }) {
+  if (!supabase || !userId) return { error: new Error('Inicia sesión para guardar tu perfil.') }
+
+  const { error } = await supabase
+    .from('provider_profiles')
+    .upsert({ user_id: userId, bio: bio || null, phone: phone || null, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+
+  if (error && (error.code === 'PGRST205' || error.code === '42P01' || /schema cache/i.test(error.message || ''))) {
+    return { error: new Error('Falta habilitar los perfiles en Supabase. Ejecuta supabase/provider-profiles.sql.') }
+  }
+  return { error }
+}
+
+export async function getProviderServices(userId) {
+  if (!supabase || !userId) return { data: [], error: null }
+
+  const query = (columns) => supabase.from('services').select(columns).eq('provider_id', userId).eq('is_active', true).order('created_at', { ascending: false })
+  const result = await query(`${SERVICE_COLUMNS}, gallery_urls`)
+  if (isMissingGalleryColumn(result.error)) return query(SERVICE_COLUMNS)
+
+  return result
+}
+
 export async function getServiceById(serviceId) {
   if (!supabase || !serviceId) return { data: null, error: null }
 

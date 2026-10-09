@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import Stars from '../../components/reviews/Stars'
-import { changePassword, getProviderRatingSummary, getProviderReviews, isCategoryAdmin, MIN_PASSWORD_LENGTH, isSupabaseConfigured, supabase } from '../../utils/supabase'
+import { validatePhone } from '../../utils/phone'
+import { changePassword, getProviderProfile, getProviderRatingSummary, getProviderReviews, isCategoryAdmin, saveProviderProfile, MIN_PASSWORD_LENGTH, isSupabaseConfigured, supabase } from '../../utils/supabase'
 
 function getFullName(user) {
   return user?.user_metadata?.full_name || user?.user_metadata?.name || ''
@@ -23,6 +24,9 @@ export default function ProfilePage() {
   const [rating, setRating] = useState(null)
   const [ratingError, setRatingError] = useState('')
   const [reviews, setReviews] = useState([])
+  const [bio, setBio] = useState('')
+  const [phone, setPhone] = useState('')
+  const [savedProfile, setSavedProfile] = useState({ bio: '', phone: '' })
   const [activeTab, setActiveTab] = useState(location.state?.profileTab || 'personal')
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
@@ -78,6 +82,13 @@ export default function ProfilePage() {
       setRating(data)
       setRatingError(error ? 'No se pudieron cargar tus valoraciones. ¿Ejecutaste supabase/reviews.sql?' : '')
     }).catch(() => {})
+    getProviderProfile(userId).then(({ data, error }) => {
+      if (cancelled || error) return
+      const loaded = { bio: data?.bio || '', phone: data?.phone || '' }
+      setSavedProfile(loaded)
+      setBio(loaded.bio)
+      setPhone(loaded.phone)
+    }).catch(() => {})
     getProviderReviews(userId).then(({ data }) => {
       if (!cancelled) setReviews(data)
     }).catch(() => {})
@@ -108,9 +119,27 @@ export default function ProfilePage() {
       return
     }
 
+    const phoneError = validatePhone(phone)
+    if (phoneError) {
+      setNoticeType('error')
+      setNotice(phoneError)
+      return
+    }
+
     setBusy(true)
     setNotice('')
     try {
+      // Solo se guarda si cambió: así editar el nombre sigue funcionando aunque aún no exista la tabla de perfiles.
+      if (bio.trim() !== savedProfile.bio || phone.trim() !== savedProfile.phone) {
+        const { error: profileError } = await saveProviderProfile(session.user.id, { bio: bio.trim(), phone: phone.trim() })
+        if (profileError) {
+          setNoticeType('error')
+          setNotice(profileError.message)
+          return
+        }
+        setSavedProfile({ bio: bio.trim(), phone: phone.trim() })
+      }
+
       const { data, error } = await supabase.auth.updateUser({ data: { full_name: name } })
       if (error) throw error
 
@@ -203,13 +232,18 @@ export default function ProfilePage() {
             {!editingProfile && <dl className="profile-data">
               <div><dt>Nombre completo</dt><dd>{getFullName(session.user) || 'Sin nombre registrado'}</dd></div>
               <div><dt>Correo electrónico</dt><dd>{session.user.email}</dd></div>
+              <div><dt>Teléfono / WhatsApp</dt><dd>{savedProfile.phone || 'Sin teléfono'}</dd></div>
+              <div><dt>Descripción profesional</dt><dd>{savedProfile.bio || 'Sin descripción'}</dd></div>
             </dl>}
             {editingProfile && <form className="account-form profile-form" onSubmit={handleSaveProfile}>
             <label>Nombre completo<input autoComplete="name" maxLength={100} required value={fullName} onChange={(event) => setFullName(event.target.value)} /></label>
             <label>Correo electrónico<input type="email" value={session.user.email || ''} disabled readOnly /></label>
+            <label>Teléfono / WhatsApp (opcional)<input type="tel" autoComplete="tel" maxLength={30} placeholder="+56 9 1234 5678" value={phone} onChange={(event) => setPhone(event.target.value)} /></label>
+            <label>Descripción profesional (opcional)<textarea rows={4} maxLength={500} placeholder="Cuéntales a tus clientes quién eres y qué sabes hacer" value={bio} onChange={(event) => setBio(event.target.value)} /></label>
+            <small className="profile-public-hint">El teléfono y la descripción se muestran en tu perfil público y en tus publicaciones.</small>
             <div className="account-inline-actions">
               <button type="submit" disabled={busy}>{busy ? 'Guardando...' : 'Guardar cambios'}</button>
-              <button type="button" onClick={() => { setEditingProfile(false); setFullName(getFullName(session.user)); setNotice('') }}>Cancelar</button>
+              <button type="button" onClick={() => { setEditingProfile(false); setFullName(getFullName(session.user)); setBio(savedProfile.bio); setPhone(savedProfile.phone); setNotice('') }}>Cancelar</button>
             </div>
           </form>}
             {notice && <p className={`account-notice account-notice--${noticeType}`} role={noticeType === 'error' ? 'alert' : 'status'}>{notice}</p>}

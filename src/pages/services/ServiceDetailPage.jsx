@@ -6,7 +6,8 @@ import ImagePicker from '../../components/services/ImagePicker'
 import Stars from '../../components/reviews/Stars'
 import ReportServiceButton from '../../components/services/ReportServiceButton'
 import { ModalityBadges, ServiceModalityField } from '../../components/services/ServiceModality'
-import { getOrCreateConversation, getServiceById, getServiceReviews, isSupabaseConfigured, refreshServiceEmbedding, supabase, updateService, uploadServiceImage } from '../../utils/supabase'
+import { whatsappUrl } from '../../utils/phone'
+import { getOrCreateConversation, getProviderProfile, getServiceById, getServiceReviews, isSupabaseConfigured, refreshServiceEmbedding, supabase, updateService, uploadServiceImage } from '../../utils/supabase'
 
 export default function ServiceDetailPage({ services, loading, loadError }) {
   const { id } = useParams()
@@ -35,6 +36,7 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
   const [galleryUrls, setGalleryUrls] = useState([])
   const [galleryFiles, setGalleryFiles] = useState([])
   const [activeImage, setActiveImage] = useState(0)
+  const [providerProfile, setProviderProfile] = useState(null)
 
   useEffect(() => {
     setActiveImage(0)
@@ -45,6 +47,19 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
   const [reviews, setReviews] = useState([])
   const [fetchedLoading, setFetchedLoading] = useState(false)
   const service = isEditing ? detailService : listedService || (fetchedService && String(fetchedService.id) === id ? fetchedService : null)
+
+  const providerId = service?.provider_id
+  useEffect(() => {
+    setProviderProfile(null)
+    if (isEditing || !providerId) return
+
+    let cancelled = false
+    getProviderProfile(providerId).then(({ data, error }) => {
+      if (!cancelled && !error) setProviderProfile(data)
+    }).catch(() => {})
+
+    return () => { cancelled = true }
+  }, [providerId, isEditing])
 
   // Una publicación recién creada puede no estar aún en la lista cargada al inicio: se consulta directamente.
   useEffect(() => {
@@ -266,7 +281,7 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
 
   if (!service) return <main className="detail-page"><Link to="/buscar" className="back-link">← Volver a resultados</Link><p>{loadError || 'Esta publicación no está disponible.'}</p></main>
 
-  return <main className="detail-page"><nav className="breadcrumb" aria-label="Ruta de navegación"><Link to="/">Inicio</Link><span aria-hidden="true">›</span><Link to={`/buscar?category=${encodeURIComponent(service.category)}`}>{service.category}</Link><span aria-hidden="true">›</span><span aria-current="page">{service.title}</span></nav><div className="detail-grid"><div>{galleryImages.length > 0 && <img className="detail-image" src={galleryImages[shownImage]} alt={service.title} />}{galleryImages.length > 1 && <div className="detail-gallery" role="list" aria-label="Fotos de la publicación">{galleryImages.map((url, index) => <button key={url} type="button" role="listitem" className={index === shownImage ? 'is-active' : ''} aria-label={`Ver foto ${index + 1} de ${galleryImages.length}`} aria-current={index === shownImage} onClick={() => setActiveImage(index)}><img src={url} alt="" /></button>)}</div>}</div><section className="detail-copy"><span className="category-label">{service.category}</span><h1>{service.title}</h1><p className="detail-provider">{service.provider_name} <span className="verified">✓</span></p><div className="detail-rating"><strong>★ {Number(service.rating).toFixed(1)}{reviews.length > 0 && <small> ({reviews.length})</small>}</strong><span>⌖ {service.location}</span><ModalityBadges service={service} /></div><hr /><h3>Sobre este servicio</h3><p className="description">{service.description}</p>{!ownsPublishedService && <div className="contact-box"><div><strong>¿Te interesa este servicio?</strong><small>Responde normalmente en menos de una hora.</small>{notice && <small className="contact-notice" role="alert">{notice}</small>}</div><button className="dark-button" type="button" disabled={saving} onClick={handleContact}>{saving ? 'Abriendo chat...' : 'Contactar'} <span aria-hidden="true">→</span></button></div>}{!ownsPublishedService && <ReportServiceButton serviceId={service.id} loggedIn={Boolean(session)} onRequireLogin={() => navigate('/cuenta', { state: { backgroundLocation: location } })} />}</section></div>
+  return <main className="detail-page"><nav className="breadcrumb" aria-label="Ruta de navegación"><Link to="/">Inicio</Link><span aria-hidden="true">›</span><Link to={`/buscar?category=${encodeURIComponent(service.category)}`}>{service.category}</Link><span aria-hidden="true">›</span><span aria-current="page">{service.title}</span></nav><div className="detail-grid"><div>{galleryImages.length > 0 && <img className="detail-image" src={galleryImages[shownImage]} alt={service.title} />}{galleryImages.length > 1 && <div className="detail-gallery" role="list" aria-label="Fotos de la publicación">{galleryImages.map((url, index) => <button key={url} type="button" role="listitem" className={index === shownImage ? 'is-active' : ''} aria-label={`Ver foto ${index + 1} de ${galleryImages.length}`} aria-current={index === shownImage} onClick={() => setActiveImage(index)}><img src={url} alt="" /></button>)}</div>}</div><section className="detail-copy"><span className="category-label">{service.category}</span><h1>{service.title}</h1><p className="detail-provider">{service.provider_id ? <Link to={`/profesional/${service.provider_id}`}>{service.provider_name}</Link> : service.provider_name} <span className="verified">✓</span></p><div className="detail-rating"><strong>★ {Number(service.rating).toFixed(1)}{reviews.length > 0 && <small> ({reviews.length})</small>}</strong><span>⌖ {service.location}</span><ModalityBadges service={service} /></div><hr /><h3>Sobre este servicio</h3><p className="description">{service.description}</p>{!ownsPublishedService && <div className="contact-box"><div><strong>¿Te interesa este servicio?</strong><small>Responde normalmente en menos de una hora.</small>{notice && <small className="contact-notice" role="alert">{notice}</small>}</div><button className="dark-button" type="button" disabled={saving} onClick={handleContact}>{saving ? 'Abriendo chat...' : 'Contactar'} <span aria-hidden="true">→</span></button></div>}{!ownsPublishedService && whatsappUrl(providerProfile?.phone) && <a className="whatsapp-link" href={whatsappUrl(providerProfile.phone, `Hola, vi tu publicación «${service.title}» en Oficios Cerca y quisiera consultarte.`)} target="_blank" rel="noopener noreferrer">Escribir por WhatsApp <span aria-hidden="true">→</span></a>}{!ownsPublishedService && <ReportServiceButton serviceId={service.id} loggedIn={Boolean(session)} onRequireLogin={() => navigate('/cuenta', { state: { backgroundLocation: location } })} />}</section></div>
     <section className="reviews-section" aria-labelledby="reviews-title">
       <h2 id="reviews-title">Valoraciones{reviews.length > 0 && <small> · {reviews.length}</small>}</h2>
       {reviews.length ? <ul className="reviews-list">{reviews.map((review) => <li key={review.id}>

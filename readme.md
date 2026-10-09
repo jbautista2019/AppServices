@@ -66,7 +66,7 @@ Todos son idempotentes y se ejecutan en **SQL Editor**. El orden importa porque 
 
 1. `supabase/schema.sql` (servicios, categorías, chat y `category_admins`)
 2. `supabase/seed.sql` (datos de prueba, opcional)
-3. `supabase/service-modality.sql`, `supabase/communes.sql`, `supabase/storage-service-images.sql`, `supabase/service-gallery.sql`
+3. `supabase/service-modality.sql`, `supabase/communes.sql`, `supabase/storage-service-images.sql`, `supabase/service-gallery.sql`, `supabase/provider-profiles.sql`
 4. `supabase/chat-upgrade.sql` (eliminar conversaciones; usa las tablas del chat)
 5. `supabase/reviews.sql` (valoraciones; usa `conversations` y `messages`)
 6. `supabase/user-notifications.sql` (notificaciones de la plataforma)
