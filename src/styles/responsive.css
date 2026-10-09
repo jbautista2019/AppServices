@@ -445,6 +445,9 @@ select {
 
 #root > main {
   flex: 1 0 auto;
+  /* En una columna flex, un main con margin: auto (páginas centradas con max-width) se encoge al ancho de su contenido en vez de
+     estirarse. Con width: 100% ocupa todo el ancho disponible hasta su max-width, como antes de que el pie quedara siempre abajo. */
+  width: 100%;
 }
 
 #root > .site-footer {
