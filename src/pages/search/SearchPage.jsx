@@ -24,6 +24,7 @@ export default function SearchPage({ services, categories, loading, loadError, e
   const [minimumPrice, setMinimumPrice] = useState('')
   const [maximumPrice, setMaximumPrice] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [sortBy, setSortBy] = useState('relevance')
   const urlKey = urlParams.toString()
   // Resultado de la búsqueda híbrida para la consulta activa (null = no hay consulta o falló el servicio).
   const [ranking, setRanking] = useState(null)
@@ -82,9 +83,15 @@ export default function SearchPage({ services, categories, loading, loadError, e
       return matchesQuery && matchesCategory && matchesLocation && matchesMinimumPrice && matchesMaximumPrice
     })
 
-    if (!ranking) return matches
+    const byRating = (first, second) => Number(second.rating) - Number(first.rating)
+    const byPrice = (first, second) => Number(first.starting_price) - Number(second.starting_price)
+    if (sortBy === 'rating') return matches.sort(byRating)
+    if (sortBy === 'price-asc') return matches.sort(byPrice)
+    if (sortBy === 'price-desc') return matches.sort((first, second) => byPrice(second, first))
+    // «Más recientes» y «Más relevantes» sin consulta conservan el orden de carga (más nuevas primero).
+    if (sortBy === 'recent' || !ranking) return matches
     return matches.sort((first, second) => ranking.get(String(second.id)).score - ranking.get(String(first.id)).score)
-  }, [query, category, location, minimumPrice, maximumPrice, services, ranking])
+  }, [query, category, location, minimumPrice, maximumPrice, services, ranking, sortBy])
   const pageCount = Math.ceil(filtered.length / SERVICES_PER_PAGE)
   const visibleServices = filtered.slice((currentPage - 1) * SERVICES_PER_PAGE, currentPage * SERVICES_PER_PAGE)
   const PageWrapper = embedded ? 'div' : 'main'
@@ -95,7 +102,7 @@ export default function SearchPage({ services, categories, loading, loadError, e
         <aside className="filters">
           <div className="filter-title">
             <strong>Filtrar resultados</strong>
-            <button onClick={() => { setQuery(''); setCategory('Todas'); setLocation(''); setMinimumPrice(''); setMaximumPrice(''); setCurrentPage(1); if (!embedded) setUrlParams({}) }}>Limpiar</button>
+            <button onClick={() => { setQuery(''); setCategory('Todas'); setLocation(''); setMinimumPrice(''); setMaximumPrice(''); setCurrentPage(1); setSortBy('relevance'); if (!embedded) setUrlParams({}) }}>Limpiar</button>
           </div>
           <label>
             Servicio o categoría
@@ -118,8 +125,14 @@ export default function SearchPage({ services, categories, loading, loadError, e
         </aside>
         <section className="listing">
           <div className="listing-top">
-            <span><strong>{loading || searching ? '...' : filtered.length}</strong> servicios encontrados{ranking && !searching && <small className="listing-relevance"> · ordenados por relevancia</small>}</span>
-            <select aria-label="Ordenar"><option>Más relevantes</option><option>Mejor evaluados</option><option>Precio menor</option></select>
+            <span><strong>{loading || searching ? '...' : filtered.length}</strong> servicios encontrados{ranking && !searching && sortBy === 'relevance' && <small className="listing-relevance"> · ordenados por relevancia</small>}</span>
+            <select aria-label="Ordenar" value={sortBy} onChange={(event) => { setSortBy(event.target.value); setCurrentPage(1) }}>
+              <option value="relevance">Más relevantes</option>
+              <option value="recent">Más recientes</option>
+              <option value="rating">Mejor evaluados</option>
+              <option value="price-asc">Precio: menor a mayor</option>
+              <option value="price-desc">Precio: mayor a menor</option>
+            </select>
           </div>
           {loadError && <p className="data-notice">{loadError}</p>}
           {searching && <p className="data-notice" role="status">Buscando...</p>}
