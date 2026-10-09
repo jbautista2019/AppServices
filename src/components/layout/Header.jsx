@@ -221,7 +221,7 @@ export default function Header() {
           </button>
           {notificationsOpen && <section className="header-notifications-menu" id="header-notifications-menu" aria-label="Notificaciones de mensajes">
             <div className="header-notifications-heading"><strong>Notificaciones</strong><span>{totalNotifications} sin leer</span></div>
-            {platformNotifications.length > 0 && <div className="header-notifications-list">{platformNotifications.map((notification) => <Link className="header-notification-item" key={notification.id} to={notification.link || '/perfil'} onClick={() => openPlatformNotification(notification)}>
+            {platformNotifications.length > 0 && <div className="header-notifications-list">{platformNotifications.map((notification) => <Link className="header-notification-item" key={notification.id} to={notification.link || `${location.pathname}${location.search}`} onClick={() => openPlatformNotification(notification)}>
               <span className="header-notification-dot header-notification-dot--alert" aria-hidden="true" />
               <span><strong>{notification.title}</strong>{notification.body && <span>{notification.body}</span>}</span>
             </Link>)}</div>}

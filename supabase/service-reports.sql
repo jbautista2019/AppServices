@@ -152,7 +152,9 @@ returns void
 language plpgsql
 security definer
 set search_path = ''
-as $$
+as $
+declare
+  rep record;
 begin
   if not (select public.is_category_admin()) then
     raise exception 'No tienes permiso para moderar reportes.';
@@ -162,9 +164,29 @@ begin
     raise exception 'Estado no válido.';
   end if;
 
+  select id, reporter_id, service_title, status into rep from public.service_reports where id = p_report_id;
+  if not found then
+    raise exception 'El reporte no existe.';
+  end if;
+
   update public.service_reports set status = p_status where id = p_report_id;
+
+  -- Avisa a quien reportó cuando su reporte se resuelve (no al reabrirlo).
+  if p_status in ('reviewed', 'dismissed') and rep.status is distinct from p_status then
+    insert into public.user_notifications (user_id, type, title, body, link)
+    values (
+      rep.reporter_id,
+      'report_resolved',
+      case when p_status = 'reviewed' then 'Revisamos tu reporte' else 'Cerramos tu reporte' end,
+      case when p_status = 'reviewed'
+        then format('Gracias por avisarnos. Revisamos tu reporte sobre «%s» y tomamos las medidas necesarias.', coalesce(rep.service_title, 'la publicación'))
+        else format('Revisamos tu reporte sobre «%s» y no encontramos motivos para actuar. Gracias por ayudarnos a cuidar la comunidad.', coalesce(rep.service_title, 'la publicación'))
+      end,
+      null
+    );
+  end if;
 end
-$$;
+$;
 
 revoke all on function public.admin_set_report_status(uuid, text) from public;
 grant execute on function public.admin_set_report_status(uuid, text) to authenticated;
