@@ -1832,3 +1832,106 @@
 }
 
 .header-notification-dot--alert { background: #d93025; }
+
+/* Autocompletado del buscador: el contenedor desaparece del layout y la lista se ancla al formulario */
+.search-autocomplete {
+  display: contents;
+}
+
+.header-search,
+.home-search {
+  position: relative;
+}
+
+.search-autocomplete .search-suggestions {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  z-index: 80;
+  max-height: 380px;
+  padding: 6px 0;
+  overflow-y: auto;
+  border: 1px solid #cfdbec;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 12px 30px rgba(15, 55, 105, 0.16);
+  text-align: left;
+}
+
+.search-autocomplete .search-suggestions-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px 8px;
+  color: #5b6b82;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.search-autocomplete .search-suggestions button {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.search-autocomplete .search-suggestions-heading button {
+  color: var(--brand-blue);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.search-autocomplete .search-suggestions-heading button:hover {
+  text-decoration: underline;
+}
+
+.search-autocomplete .search-suggestion {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  color: #10284e;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.search-autocomplete .search-suggestion.is-active {
+  background: #eef4fd;
+}
+
+.search-autocomplete .search-suggestion-icon {
+  color: #7a8aa3;
+  font-size: 16px;
+  text-align: center;
+}
+
+.search-autocomplete .search-suggestion-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-autocomplete .search-suggestion-type {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #eef2f8;
+  color: #5b6b82;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.search-autocomplete .search-suggestions .search-suggestion-remove {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: #7a8aa3;
+  font-size: 18px;
+  line-height: 24px;
+  text-align: center;
+}
+
+.search-autocomplete .search-suggestions .search-suggestion-remove:hover {
+  background: #dde6f4;
+  color: #10284e;
+}

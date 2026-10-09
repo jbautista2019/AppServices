@@ -57,7 +57,7 @@ export default function App() {
   }, [refreshServices])
 
   return <>
-    <Header />
+    <Header services={services} categories={categories} />
     <Routes location={pageLocation}>
       <Route path="/" element={<HomePage services={services} categories={categories} loading={loading} />} />
       <Route path="/buscar" element={<SearchPage services={services} categories={categories} loading={loading} loadError={loadError} />} />

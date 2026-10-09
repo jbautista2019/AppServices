@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import SearchAutocomplete from '../common/SearchAutocomplete'
+import { addSearchHistory } from '../../utils/searchHistory'
 import { getPendingReportNotifications, getUnreadMessageNotifications, getUnreadPlatformNotifications, markPlatformNotificationsRead, isCategoryAdmin, REPORT_REASONS, REPORTS_CHANGED_EVENT, supabase } from '../../utils/supabase'
 
-export default function Header() {
+export default function Header({ services = [], categories = [] }) {
   const location = useLocation()
   const navigate = useNavigate()
   const [searchText, setSearchText] = useState(() => (location.pathname === '/buscar' ? new URLSearchParams(location.search).get('q') || '' : ''))
@@ -158,10 +160,16 @@ export default function Header() {
     if (location.pathname === '/buscar') setSearchText(new URLSearchParams(location.search).get('q') || '')
   }, [location.pathname, location.search])
 
+  function runSearch(rawTerm) {
+    const term = rawTerm.trim()
+    if (term) addSearchHistory(term)
+    setSearchText(term)
+    navigate(term ? `/buscar?q=${encodeURIComponent(term)}` : '/buscar')
+  }
+
   function handleSearch(event) {
     event.preventDefault()
-    const term = searchText.trim()
-    navigate(term ? `/buscar?q=${encodeURIComponent(term)}` : '/buscar')
+    runSearch(searchText)
   }
 
   useEffect(() => {
@@ -204,7 +212,7 @@ export default function Header() {
     <div className="header-inner">
       <Link to="/" className="brand"><span className="brand-mark" aria-hidden="true">⌂</span><span className="brand-copy">oficios <i>cerca</i><small>Servicios de confianza, cerca de ti</small></span></Link>
       <form className="header-search" role="search" onSubmit={handleSearch}>
-        <input type="search" aria-label="Buscar servicios" placeholder="Busca gasfíter, electricista, manicure..." value={searchText} onChange={(event) => setSearchText(event.target.value)} />
+        <SearchAutocomplete value={searchText} onChange={setSearchText} onSelect={runSearch} services={services} categories={categories} inputProps={{ type: 'search', 'aria-label': 'Buscar servicios', placeholder: 'Busca gasfíter, electricista, manicure...' }} />
         <button type="submit" aria-label="Buscar">
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
         </button>
