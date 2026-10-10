@@ -1,5 +1,5 @@
--- Modalidad de atención de cada servicio: en local y/o a domicilio. Ejecutar en Supabase > SQL Editor (idempotente).
--- Los servicios existentes quedan como "en local" por defecto.
+-- Modalidad de atención de cada servicio: local comercial y/o a domicilio. Ejecutar en Supabase > SQL Editor (idempotente).
+-- Los servicios existentes quedan como "local comercial" por defecto.
 
 alter table public.services
   add column if not exists offers_local boolean not null default true,

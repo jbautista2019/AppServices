@@ -57,7 +57,7 @@ export default function CreateServicePage({ categories }) {
     event.preventDefault()
     if (!session || !supabase) return
     if (!form.offersLocal && !form.offersHome) {
-      setError('Selecciona al menos una modalidad de atención: en local o a domicilio.')
+      setError('Selecciona al menos una modalidad de atención: local comercial o a domicilio.')
       return
     }
 

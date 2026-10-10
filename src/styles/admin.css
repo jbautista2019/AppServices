@@ -1664,22 +1664,59 @@ button.account-module-card {
   font-size: 13px;
 }
 
-.modality-field .modality-option {
+.modality-toggle {
   display: inline-flex;
-  flex-direction: row;
   align-items: center;
   gap: 8px;
-  color: var(--ink);
+  min-height: 40px;
+  padding: 0 16px 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: white;
+  color: #64748b;
   font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
+  transition: border-color .15s, background-color .15s, color .15s, box-shadow .15s;
 }
 
-.modality-field .modality-option input {
-  width: 17px;
-  min-height: 0;
-  height: 17px;
-  padding: 0;
-  accent-color: var(--brand-blue);
+.modality-toggle svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  transition: transform .2s;
+}
+
+.modality-toggle:hover {
+  border-color: #b8d4f7;
+  color: var(--brand-blue);
+}
+
+.modality-toggle:focus-visible {
+  outline: 2px solid rgba(8, 102, 223, .35);
+  outline-offset: 2px;
+}
+
+.modality-toggle.on {
+  border-color: var(--brand-blue);
+  background: #eaf2ff;
+  color: var(--brand-blue-dark);
+  box-shadow: 0 1px 4px rgba(8, 102, 223, .15);
+}
+
+.modality-toggle.on svg {
+  fill-opacity: .28;
+  animation: modality-pop .25s ease;
+}
+
+@keyframes modality-pop {
+  0% { transform: scale(.7); }
+  60% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modality-toggle.on svg { animation: none; }
 }
 
 .modality-error {
@@ -2266,3 +2303,34 @@ button.account-module-card {
 .admin-service-status--active { background: #def5e5; color: #1d6b3a; }
 .admin-service-status--paused { background: #fff3d6; color: #8a5a00; }
 .admin-service-status--hidden { background: #fde3e0; color: #b3261e; }
+
+.provider-profile-reviews {
+  max-width: 760px;
+  margin-top: 40px;
+}
+
+.provider-profile-reviews h2 {
+  margin-bottom: 14px;
+}
+
+.provider-profile-reviews h2 small {
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* Títulos de sección del perfil público: sin el interletrado apretado de los h2 globales */
+.provider-profile-page h2 {
+  margin: 0 0 14px;
+  font-size: 22px;
+  letter-spacing: 0;
+  line-height: 1.3;
+}
+
+.provider-profile-page h2 small {
+  margin-left: 4px;
+  color: var(--muted);
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0;
+}

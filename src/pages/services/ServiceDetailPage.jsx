@@ -212,7 +212,7 @@ export default function ServiceDetailPage({ services, loading, loadError }) {
       }
 
       if (!payload.offers_local && !payload.offers_home) {
-        throw new Error('Selecciona al menos una modalidad de atención: en local o a domicilio.')
+        throw new Error('Selecciona al menos una modalidad de atención: local comercial o a domicilio.')
       }
 
       if (!payload.title || !payload.category || !payload.location) {
