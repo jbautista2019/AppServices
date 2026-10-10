@@ -230,6 +230,7 @@ export default function Header({ services = [], categories = [] }) {
         <Link className={isActive('/') ? 'header-nav-active' : ''} to="/">Inicio</Link>
         <Link className={isActive('/buscar') ? 'header-nav-active' : ''} to="/buscar">Categorías</Link>
         <Link className={isActive('/planes') ? 'header-nav-active' : ''} to="/planes">Planes</Link>
+        <Link className={isActive('/como-funciona') ? 'header-nav-active' : ''} to="/como-funciona">Cómo funciona</Link>
       </nav>
       <div className="header-actions">
         {session && <div className="header-notifications-wrap header-favorites-wrap" ref={favoritesRef}>

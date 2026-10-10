@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import Footer from '../components/layout/Footer'
+import ScrollToTop from '../components/layout/ScrollToTop'
 import { FavoritesProvider } from '../context/FavoritesContext'
 import Header from '../components/layout/Header'
 import LoadingOverlay from '../components/layout/LoadingOverlay'
@@ -14,6 +15,7 @@ import AdminServicesPage from '../pages/admin/AdminServicesPage'
 import CategoriesAdminPage from '../pages/admin/CategoriesAdminPage'
 import HomePage from '../pages/home/HomePage'
 import MessagesPage from '../pages/messages/MessagesPage'
+import HowItWorksPage from '../pages/how-it-works/HowItWorksPage'
 import PlansPage from '../pages/plans/PlansPage'
 import ProvidersPage from '../pages/providers/ProvidersPage'
 import ProviderProfilePage from '../pages/providers/ProviderProfilePage'
@@ -60,6 +62,7 @@ export default function App() {
   }, [refreshServices])
 
   return <FavoritesProvider>
+    <ScrollToTop />
     <Header services={services} categories={categories} />
     <Routes location={pageLocation}>
       <Route path="/" element={<HomePage services={services} categories={categories} loading={loading} />} />
@@ -78,6 +81,7 @@ export default function App() {
       <Route path="/admin/publicaciones" element={<AdminServicesPage />} />
       <Route path="/admin/promociones" element={<AdminPromotionsPage />} />
       <Route path="/planes" element={<PlansPage />} />
+      <Route path="/como-funciona" element={<HowItWorksPage />} />
     </Routes>
     {loginOpen && <AccountPage />}
     {registrationOpen && <RegistrationModal onClose={() => navigate(backgroundLocation ? `${backgroundLocation.pathname}${backgroundLocation.search}${backgroundLocation.hash}` : '/', { replace: true })} />}

@@ -2121,3 +2121,12 @@
     overflow-y: auto;
   }
 }
+
+/* Filtros del catálogo fijos mientras se desplaza el listado (solo con dos columnas y pantalla alta) */
+@media (min-width: 801px) and (min-height: 561px) {
+  .results-layout > .filters {
+    position: sticky;
+    top: 88px;
+    align-self: start;
+  }
+}
