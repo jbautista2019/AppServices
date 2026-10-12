@@ -1,0 +1,98 @@
+/* Botones de acción: planos, de color, texto en mayúsculas y brillo suave (se importa al final para unificar el estilo) */
+.category-admin-form button:not([type='button']),
+.category-admin-login button,
+.account-inline-actions button,
+.account-profile-actions > .account-profile-link,
+.create-service-actions > button,
+.account-form > button,
+.account-session button,
+.admin-plan-actions button:not([type='button']),
+.admin-plans-new,
+.my-services-create,
+.agenda-new,
+.agenda-cta,
+.agenda-actions button:not([type='button']),
+.agenda-row-actions .agenda-share,
+.search-bar button,
+.dark-button,
+.header-register,
+.home-search button,
+.home-contact-button,
+.home-provider-copy a,
+.review-submit,
+.message-review-link,
+.how-cta-primary,
+.messages-composer > button,
+.plan-button:not(.plan-button--ghost) {
+  --btn-color: var(--brand-blue);
+  border: 0;
+  border-radius: 4px;
+  background-color: var(--btn-color);
+  background-image:
+    radial-gradient(130% 100% at 50% 0%, rgba(255, 255, 255, .2) 0 54%, rgba(255, 255, 255, 0) 55%),
+    linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, .1));
+  box-shadow: 0 2px 0 rgba(0, 0, 0, .18);
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .12);
+  transition: filter .15s, transform .1s, box-shadow .1s;
+}
+
+/* Variantes de color */
+.agenda-row-actions .agenda-share { --btn-color: #2fb36a; }
+.dark-button,
+.search-bar button,
+.messages-composer > button { --btn-color: #25272d; }
+.home-contact-button,
+.how-cta-primary { --btn-color: #2a8fc9; }
+.review-submit,
+.message-review-link { --btn-color: #8e5ab5; }
+
+.category-admin-form button:not([type='button']):hover:not(:disabled),
+.category-admin-login button:hover:not(:disabled),
+.account-inline-actions button:hover:not(:disabled),
+.account-profile-actions > .account-profile-link:hover,
+.create-service-actions > button:hover:not(:disabled),
+.account-form > button:hover:not(:disabled),
+.account-session button:hover:not(:disabled),
+.admin-plan-actions button:not([type='button']):hover:not(:disabled),
+.admin-plans-new:hover,
+.my-services-create:hover,
+.agenda-new:hover:not(:disabled),
+.agenda-cta:hover,
+.agenda-actions button:not([type='button']):hover:not(:disabled),
+.agenda-row-actions .agenda-share:hover:not(:disabled),
+.search-bar button:hover:not(:disabled),
+.dark-button:hover:not(:disabled),
+.header-register:hover,
+.home-search button:hover:not(:disabled),
+.home-contact-button:hover:not(:disabled),
+.home-provider-copy a:hover,
+.review-submit:hover:not(:disabled),
+.message-review-link:hover,
+.how-cta-primary:hover,
+.messages-composer > button:hover:not(:disabled),
+.plan-button:not(.plan-button--ghost):hover:not(:disabled) {
+  background-color: var(--btn-color);
+  filter: brightness(1.08);
+}
+
+.agenda-new:active,
+.dark-button:active,
+.home-contact-button:active,
+.review-submit:active,
+.plan-button:not(.plan-button--ghost):active {
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  transform: translateY(2px);
+}
+
+.agenda-new:disabled,
+.dark-button:disabled,
+.review-submit:disabled,
+.plan-button:disabled,
+.messages-composer > button:disabled {
+  filter: grayscale(.4);
+  opacity: .6;
+}

@@ -11,6 +11,7 @@ import './styles/how-it-works.css'
 import './styles/messaging.css'
 import './styles/plans.css'
 import './styles/responsive.css'
+import './styles/buttons.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
