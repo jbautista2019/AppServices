@@ -1,16 +1,14 @@
--- Agenda de citas para profesionales premium (/agenda) y «Mis citas» para clientes de la plataforma (/mis-citas).
+-- Agenda de citas para profesionales (/agenda) y «Mis citas» para clientes de la plataforma (/mis-citas).
 -- Ejecutar en Supabase > SQL Editor (idempotente).
--- Requiere antes: supabase/schema.sql (conversations), supabase/premium-plans.sql y supabase/user-notifications.sql.
+-- Requiere antes: supabase/schema.sql (conversations) y supabase/user-notifications.sql.
 --
 -- Reglas:
---   * Solo los usuarios PREMIUM usan la agenda: tienen al menos una publicación con premium_until en el futuro. Se exige en la base de
---     datos (no solo en la pantalla): sin plan vigente no pueden ver ni crear ni modificar citas. Las citas se conservan y vuelven a
---     estar disponibles al renovar el plan.
+--   * La agenda es gratuita para cualquier usuario con sesión (el plan premium da visibilidad e insignia, no la agenda).
 --   * Un profesional puede agendar para clientes de la plataforma (solo personas que le hayan escrito por el chat) o para clientes
---     externos (nombre y teléfono/correo libres). Los clientes de la plataforma reciben una notificación y ven su cita en /mis-citas
---     aunque el profesional ya no sea premium. Ven solo fecha, lugar y estado: las notas y los datos de contacto son del profesional.
+--     externos (nombre libre). Los clientes de la plataforma reciben una notificación y ven su cita en /mis-citas. Ven solo fecha,
+--     lugar y estado: las notas y los datos de contacto son del profesional.
 --   * No se pueden superponer dos citas «agendadas» del mismo profesional.
---   * Todas las escrituras pasan por funciones que validan los datos; la tabla solo la lee el profesional premium dueño de las citas.
+--   * Todas las escrituras pasan por funciones que validan los datos; la tabla solo la lee el profesional dueño de las citas.
 
 create table if not exists public.appointments (
   id uuid primary key default gen_random_uuid(),
@@ -63,10 +61,11 @@ revoke all on function public.is_premium_user() from public, anon;
 grant execute on function public.is_premium_user() to authenticated;
 
 drop policy if exists "Premium providers read their appointments" on public.appointments;
-create policy "Premium providers read their appointments"
+drop policy if exists "Providers read their appointments" on public.appointments;
+create policy "Providers read their appointments"
   on public.appointments for select
   to authenticated
-  using (provider_id = (select auth.uid()) and (select public.is_premium_user()));
+  using (provider_id = (select auth.uid()));
 
 -- Versiones anteriores dejaban a los clientes leer la tabla completa (incluye las notas privadas del profesional).
 drop policy if exists "Clients read their appointments" on public.appointments;
@@ -137,9 +136,6 @@ declare
 begin
   if caller_id is null then
     raise exception 'Inicia sesión para usar la agenda.';
-  end if;
-  if not public.is_premium_user() then
-    raise exception 'La agenda de citas es parte de los planes premium. Activa un plan en Planes para usarla.';
   end if;
 
   if p_starts_at is null or p_ends_at is null or p_ends_at <= p_starts_at then
@@ -267,9 +263,6 @@ begin
   if caller_id is null then
     raise exception 'Inicia sesión para usar la agenda.';
   end if;
-  if not public.is_premium_user() then
-    raise exception 'La agenda de citas es parte de los planes premium. Activa un plan en Planes para usarla.';
-  end if;
   if p_status not in ('scheduled', 'completed', 'cancelled', 'no_show') then
     raise exception 'Estado no válido.';
   end if;
@@ -318,9 +311,6 @@ begin
   if (select auth.uid()) is null then
     raise exception 'Inicia sesión para usar la agenda.';
   end if;
-  if not public.is_premium_user() then
-    raise exception 'La agenda de citas es parte de los planes premium. Activa un plan en Planes para usarla.';
-  end if;
 
   update public.appointments set shared_at = now() where id = p_id and provider_id = (select auth.uid());
   if not found then
@@ -342,9 +332,6 @@ begin
   if (select auth.uid()) is null then
     raise exception 'Inicia sesión para usar la agenda.';
   end if;
-  if not public.is_premium_user() then
-    raise exception 'La agenda de citas es parte de los planes premium. Activa un plan en Planes para usarla.';
-  end if;
 
   delete from public.appointments where id = p_id and provider_id = (select auth.uid());
   if not found then
@@ -356,10 +343,9 @@ $$;
 revoke all on function public.delete_appointment(uuid) from public, anon;
 grant execute on function public.delete_appointment(uuid) to authenticated;
 
--- La agenda forma parte de los planes premium de ejemplo: se agrega a sus características (los planes que creaste tú no se tocan).
+-- La agenda ya no es exclusiva de los planes premium: se quita de sus características (si una versión anterior la agregó).
 update public.premium_plans
-set features = features || array['Agenda de citas para tus clientes, de la plataforma y externos']
-where id in ('premium-30', 'premium-90')
-  and not ('Agenda de citas para tus clientes, de la plataforma y externos' = any (features));
+set features = array_remove(features, 'Agenda de citas para tus clientes, de la plataforma y externos')
+where 'Agenda de citas para tus clientes, de la plataforma y externos' = any (features);
 
 notify pgrst, 'reload schema';

@@ -409,6 +409,7 @@ export default function MessagesPage() {
             </button>
             <div><span>Conversación con</span><h2>{counterpartName}</h2></div>
             <p>Publicación: <Link to={`/servicio/${activeConversation.service_id}`}>{activeConversation.service_title}</Link></p>
+            {String(activeConversation.provider_id) === String(userId) && <Link className="messages-request-review messages-schedule" to="/agenda" state={{ scheduleClientId: activeConversation.client_id }} title="Agendar una cita con esta persona">📅 Agendar cita</Link>}
             {String(activeConversation.provider_id) === String(userId) && <button className="messages-request-review" type="button" disabled={requestingReview} onClick={handleRequestReview} title="Enviar un mensaje pidiendo que valore tu servicio">★ Solicitar valoración</button>}
             <button className="messages-delete-conversation" type="button" disabled={deleting} onClick={handleDeleteConversation} aria-label="Eliminar conversación" title="Eliminar conversación para mí">
               <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="m19 6-1 14H6L5 6" /><path d="M10 11v5M14 11v5" /></svg>

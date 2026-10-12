@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { deleteAppointment, getMyChatClients, getPremiumAccess, getUserServices, isSupabaseConfigured, listProviderAppointments, markAppointmentShared, saveAppointment, sendConversationMessage, setAppointmentStatus, supabase } from '../../utils/supabase'
+import { deleteAppointment, getMyChatClients, getUserServices, isSupabaseConfigured, listProviderAppointments, markAppointmentShared, saveAppointment, sendConversationMessage, setAppointmentStatus, supabase } from '../../utils/supabase'
 import { validatePhone, whatsappUrl } from '../../utils/phone'
 
 const FIRST_HOUR = 8
@@ -86,9 +86,10 @@ function formFromAppointment(appointment) {
 export default function AgendaPage() {
   const location = useLocation()
   const panelRef = useRef(null)
+  const prefillClientRef = useRef(location.state?.scheduleClientId || null)
   const [session, setSession] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
-  const [premium, setPremium] = useState(null)
+  const [ready, setReady] = useState(false)
   const [appointments, setAppointments] = useState([])
   const [chatClients, setChatClients] = useState([])
   const [services, setServices] = useState([])
@@ -130,30 +131,32 @@ export default function AgendaPage() {
 
   useEffect(() => {
     if (!userId) {
-      setPremium(null)
+      setReady(false)
       setAppointments([])
       return
     }
 
     let cancelled = false
     async function start() {
-      const { data: hasAccess, error } = await getPremiumAccess()
-      if (cancelled) return
-      if (error) {
-        setNoticeType('error')
-        setNotice(error.message)
-      }
-      setPremium(hasAccess)
-      if (!hasAccess) return
-
       const [, clientsResult, servicesResult] = await Promise.all([loadAppointments(), getMyChatClients(userId), getUserServices(userId)])
       if (cancelled) return
+      setReady(true)
       setChatClients(clientsResult.data || [])
       setServices(servicesResult.data || [])
+
+      // Llegó desde el chat con «Agendar cita»: abre el formulario con esa persona ya elegida.
+      const prefillId = prefillClientRef.current
+      if (prefillId && (clientsResult.data || []).some((client) => client.client_id === prefillId)) {
+        prefillClientRef.current = null
+        const today = toDateInput(new Date())
+        setSelectedDay(today)
+        setModalOpen(true)
+        setForm({ ...emptyForm(today), clientType: 'platform', clientId: prefillId })
+      }
     }
 
     start().catch(() => {
-      if (!cancelled) setPremium(false)
+      if (!cancelled) setReady(true)
     })
     return () => { cancelled = true }
   }, [userId, loadAppointments])
@@ -413,33 +416,19 @@ export default function AgendaPage() {
   return <main className="agenda-page">
     <header className="agenda-heading">
       <div>
-        <p className="eyebrow">AGENDA <span className="agenda-premium-tag">★ PREMIUM</span></p>
+        <p className="eyebrow">AGENDA</p>
         <h1>Mi agenda de citas</h1>
         <p>Elige un día del calendario para ver o agendar tus citas, con clientes de la plataforma o externos.</p>
       </div>
-      {premium && <button type="button" className="agenda-new" onClick={openNewForm}>+ Nueva cita</button>}
+      {ready && <button type="button" className="agenda-new" onClick={openNewForm}>+ Nueva cita</button>}
     </header>
 
     {!isSupabaseConfigured && <p className="category-admin-notice">Configura Supabase para usar la agenda.</p>}
     {isSupabaseConfigured && authLoading && <p className="category-admin-notice">Comprobando sesión...</p>}
     {isSupabaseConfigured && !authLoading && !session && <p className="category-admin-notice">Inicia sesión para usar tu agenda. <Link to="/cuenta" state={{ backgroundLocation: location }}>Iniciar sesión</Link></p>}
-    {isSupabaseConfigured && session && premium === null && <p className="category-admin-notice">Cargando tu agenda...</p>}
+    {isSupabaseConfigured && session && !ready && <p className="category-admin-notice">Cargando tu agenda...</p>}
 
-    {session && premium === false && <section className="agenda-locked">
-      <span className="agenda-lock-icon" aria-hidden="true">★</span>
-      <h2>La agenda de citas es parte de los planes premium</h2>
-      <p>Con un plan premium vigente puedes ver tus citas en un calendario mensual, agendarlas para clientes de la plataforma y externos, y compartir cada cita por el chat con tu cliente.</p>
-      <ul>
-        <li>Calendario mensual con el detalle de cada día</li>
-        <li>Clientes de la plataforma (reciben aviso) y externos</li>
-        <li>Compartir la cita en el chat cuando tú quieras</li>
-        <li>Sin superposición de horarios</li>
-      </ul>
-      <Link className="agenda-cta" to="/planes">Ver planes premium</Link>
-      <small>Si tu plan venció, tus citas se conservan y vuelven a estar disponibles al renovarlo.</small>
-    </section>}
-
-    {session && premium && <div className="agenda-layout">
+    {session && ready && <div className="agenda-layout">
       <section className="agenda-calendar" aria-label="Calendario">
         <div className="agenda-calendar-head">
           <button type="button" aria-label="Mes anterior" onClick={() => goToMonth(-1)}>‹</button>
@@ -485,7 +474,7 @@ export default function AgendaPage() {
       </aside>
     </div>}
 
-    {session && premium && selectedDay && modalOpen && <div className="agenda-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeDay() }}>
+    {session && ready && selectedDay && modalOpen && <div className="agenda-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeDay() }}>
       <div className="agenda-modal" role="dialog" aria-modal="true" aria-label="Detalle del día" ref={panelRef}>
         <header className="agenda-modal-head">
           <button type="button" className="agenda-modal-calendar" aria-label="Volver al calendario" title="Volver al calendario" onClick={closeDay}>

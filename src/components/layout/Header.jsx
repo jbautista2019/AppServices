@@ -319,7 +319,7 @@ export default function Header({ services = [], categories = [] }) {
                 <Link to="/admin/reportes" onClick={() => setProfileMenuOpen(false)}>Reportes de publicaciones</Link>
               </> : categoryAdminChecked && <>
                 <Link to="/mis-servicios" onClick={() => setProfileMenuOpen(false)}>Mis servicios</Link>
-                <Link to="/agenda" onClick={() => setProfileMenuOpen(false)}>Mi agenda <span className="menu-premium-star" aria-label="Premium">★</span></Link>
+                <Link to="/agenda" onClick={() => setProfileMenuOpen(false)}>Mi agenda</Link>
                 <Link to="/mis-citas" onClick={() => setProfileMenuOpen(false)}>Mis citas</Link>
                 <Link to="/mensajes" onClick={() => setProfileMenuOpen(false)}>Mensajes</Link>
               </>}

@@ -23,7 +23,8 @@
 .message-review-link,
 .how-cta-primary,
 .messages-composer > button,
-.plan-button:not(.plan-button--ghost) {
+.plan-button:not(.plan-button--ghost),
+.messages-request-review {
   --btn-color: var(--brand-blue);
   border: 0;
   border-radius: 4px;
@@ -49,6 +50,8 @@
 .how-cta-primary { --btn-color: #2a8fc9; }
 .review-submit,
 .message-review-link { --btn-color: #8e5ab5; }
+.messages-request-review { --btn-color: #e5a420; }
+.messages-request-review.messages-schedule { --btn-color: var(--brand-blue); }
 
 .category-admin-form button:not([type='button']):hover:not(:disabled),
 .category-admin-login button:hover:not(:disabled),
@@ -74,7 +77,8 @@
 .message-review-link:hover,
 .how-cta-primary:hover,
 .messages-composer > button:hover:not(:disabled),
-.plan-button:not(.plan-button--ghost):hover:not(:disabled) {
+.plan-button:not(.plan-button--ghost):hover:not(:disabled),
+.messages-request-review:hover:not(:disabled) {
   background-color: var(--btn-color);
   filter: brightness(1.08);
 }
@@ -92,7 +96,19 @@
 .dark-button:disabled,
 .review-submit:disabled,
 .plan-button:disabled,
-.messages-composer > button:disabled {
+.messages-composer > button:disabled,
+.messages-request-review:disabled {
   filter: grayscale(.4);
   opacity: .6;
+}
+
+.messages-request-review {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 16px;
+  line-height: 1;
+  text-align: center;
 }
