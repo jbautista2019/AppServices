@@ -3,7 +3,8 @@ import { Link, useLocation } from 'react-router-dom'
 import { deleteAppointment, getMyChatClients, getPremiumAccess, getUserServices, isSupabaseConfigured, listProviderAppointments, markAppointmentShared, saveAppointment, sendConversationMessage, setAppointmentStatus, supabase } from '../../utils/supabase'
 import { validatePhone, whatsappUrl } from '../../utils/phone'
 
-const DURATIONS = [15, 30, 45, 60, 90, 120, 180, 240]
+const FIRST_HOUR = 8
+const LAST_HOUR = 20
 const STATUS_LABELS = { scheduled: 'Agendada', completed: 'Completada', cancelled: 'Cancelada', no_show: 'No asistió' }
 const WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 
@@ -54,12 +55,16 @@ function buildShareText(appointment, { forChat }) {
 function emptyForm(dateKey) {
   const start = new Date()
   start.setHours(start.getHours() + 1, 0, 0, 0)
-  return { id: null, clientType: 'external', clientId: '', name: '', phone: '', email: '', serviceId: '', date: dateKey || toDateInput(start), time: dateKey ? '10:00' : toTimeInput(start), duration: '60', mode: '', address: '', notes: '' }
+  return { id: null, clientType: 'external', clientId: '', name: '', phone: '', email: '', serviceId: '', date: dateKey || toDateInput(start), slots: [], legacy: false, time: '', duration: '60', mode: '', address: '', notes: '' }
 }
 
 function formFromAppointment(appointment) {
   const start = new Date(appointment.starts_at)
+  const minutes = Math.round((Date.parse(appointment.ends_at) - Date.parse(appointment.starts_at)) / 60000)
+  const aligned = start.getMinutes() === 0 && minutes % 60 === 0
   return {
+    slots: aligned ? Array.from({ length: minutes / 60 }, (_, index) => start.getHours() + index) : [],
+    legacy: !aligned,
     id: appointment.id,
     clientType: appointment.client_id ? 'platform' : 'external',
     clientId: appointment.client_id || '',
@@ -87,6 +92,7 @@ export default function AgendaPage() {
   const [services, setServices] = useState([])
   const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1))
   const [selectedDay, setSelectedDay] = useState(null)
+  const [modalOpen, setModalOpen] = useState(false)
   const [form, setForm] = useState(null)
   const [shareOffer, setShareOffer] = useState(null)
   const [busyId, setBusyId] = useState(null)
@@ -177,16 +183,18 @@ export default function AgendaPage() {
     window.setTimeout(() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50)
   }
 
-  function selectDay(key) {
+  // Al tocar un día se abre directo el formulario de una cita nueva (si el día no pasó); con { detail: true } se abre el detalle.
+  function selectDay(key, { detail = false } = {}) {
     setSelectedDay(key)
-    if (form) {
-      if (key < todayKey) return
-      // Con el formulario abierto solo se cambia la fecha: se conservan los demás datos.
-      setForm((current) => ({ ...current, date: key }))
-      return
-    }
+    setModalOpen(true)
+    setForm(!detail && key >= todayKey ? emptyForm(key) : null)
     setShareOffer(null)
-    focusPanel()
+  }
+
+  function closeDay() {
+    setModalOpen(false)
+    setForm(null)
+    setShareOffer(null)
   }
 
   function goToMonth(delta) {
@@ -196,14 +204,27 @@ export default function AgendaPage() {
   function goToToday() {
     const now = new Date()
     setMonth(new Date(now.getFullYear(), now.getMonth(), 1))
-    selectDay(toDateInput(now))
   }
 
   function openNewForm() {
+    const day = selectedDay && selectedDay >= todayKey ? selectedDay : todayKey
     setShareOffer(null)
-    setForm(emptyForm(selectedDay && selectedDay >= todayKey ? selectedDay : todayKey))
-    focusPanel()
+    setSelectedDay(day)
+    setModalOpen(true)
+    setForm(emptyForm(day))
   }
+
+  useEffect(() => {
+    if (!modalOpen) return undefined
+    const onKey = (event) => { if (event.key === 'Escape') closeDay() }
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = previous
+    }
+  }, [modalOpen])
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -217,12 +238,16 @@ export default function AgendaPage() {
       return
     }
 
-    const start = new Date(`${form.date}T${form.time}`)
+    if (!form.slots.length && !form.legacy) {
+      report('error', 'Marca al menos una hora disponible para la cita.')
+      return
+    }
+    const start = form.slots.length ? new Date(`${form.date}T${pad(form.slots[0])}:00`) : new Date(`${form.date}T${form.time}`)
     if (Number.isNaN(start.getTime())) {
       report('error', 'Elige una fecha y una hora válidas.')
       return
     }
-    const end = new Date(start.getTime() + Number(form.duration) * 60000)
+    const end = new Date(start.getTime() + (form.slots.length ? form.slots.length * 60 : Number(form.duration)) * 60000)
     const isEdit = Boolean(form.id)
     if (!isEdit && start.getTime() < Date.now()) {
       report('error', 'No puedes agendar una cita en una fecha u hora que ya pasó.')
@@ -256,6 +281,7 @@ export default function AgendaPage() {
     setForm(null)
     setMonth(new Date(start.getFullYear(), start.getMonth(), 1))
     setSelectedDay(toDateInput(start))
+    setModalOpen(true)
     report('success', isEdit ? 'Cita actualizada.' : 'Cita agendada.')
 
     // Ofrece compartirla con el cliente (el profesional decide si lo envía).
@@ -326,7 +352,24 @@ export default function AgendaPage() {
     setBusyId(null)
   }
 
-  const durationOptions = form && !DURATIONS.includes(Number(form.duration)) ? [...DURATIONS, Number(form.duration)].sort((a, b) => a - b) : DURATIONS
+  const slotHours = form ? Array.from(new Set([...Array.from({ length: LAST_HOUR - FIRST_HOUR + 1 }, (_, index) => FIRST_HOUR + index), ...form.slots])).sort((a, b) => a - b) : []
+  const slotState = (hour) => {
+    const start = new Date(`${form.date}T${pad(hour)}:00`).getTime()
+    const end = start + 3600000
+    const busy = appointments.some((appointment) => appointment.id !== form.id && appointment.status === 'scheduled' && Date.parse(appointment.starts_at) < end && Date.parse(appointment.ends_at) > start)
+    const past = !form.id && start < Date.now()
+    return { busy, past, disabled: busy || past }
+  }
+  function toggleSlot(hour) {
+    setForm((current) => {
+      const slots = current.slots
+      let next
+      if (slots.includes(hour)) next = hour === slots[0] || hour === slots[slots.length - 1] ? slots.filter((value) => value !== hour) : [hour]
+      else if (slots.length && (hour === slots[slots.length - 1] + 1 || hour === slots[0] - 1)) next = [...slots, hour].sort((a, b) => a - b)
+      else next = [hour]
+      return { ...current, slots: next, legacy: false }
+    })
+  }
 
   function renderAppointment(appointment) {
     const busy = busyId === appointment.id
@@ -372,12 +415,12 @@ export default function AgendaPage() {
         <h1>Mi agenda de citas</h1>
         <p>Elige un día del calendario para ver o agendar tus citas, con clientes de la plataforma o externos.</p>
       </div>
-      {premium && !form && <button type="button" className="agenda-new" onClick={openNewForm}>+ Nueva cita</button>}
+      {premium && <button type="button" className="agenda-new" onClick={openNewForm}>+ Nueva cita</button>}
     </header>
 
     {!isSupabaseConfigured && <p className="category-admin-notice">Configura Supabase para usar la agenda.</p>}
     {isSupabaseConfigured && authLoading && <p className="category-admin-notice">Comprobando sesión...</p>}
-    {isSupabaseConfigured && !authLoading && !session && <p className="category-admin-notice">Inicia sesión para usar tu agenda. <Link to="/cuenta" state={{ backgroundLocation: location }}>Iniciar sesión →</Link></p>}
+    {isSupabaseConfigured && !authLoading && !session && <p className="category-admin-notice">Inicia sesión para usar tu agenda. <Link to="/cuenta" state={{ backgroundLocation: location }}>Iniciar sesión</Link></p>}
     {isSupabaseConfigured && session && premium === null && <p className="category-admin-notice">Cargando tu agenda...</p>}
 
     {session && premium === false && <section className="agenda-locked">
@@ -390,7 +433,7 @@ export default function AgendaPage() {
         <li>Compartir la cita en el chat cuando tú quieras</li>
         <li>Sin superposición de horarios</li>
       </ul>
-      <Link className="agenda-cta" to="/planes">Ver planes premium <span aria-hidden="true">→</span></Link>
+      <Link className="agenda-cta" to="/planes">Ver planes premium</Link>
       <small>Si tu plan venció, tus citas se conservan y vuelven a estar disponibles al renovarlo.</small>
     </section>}
 
@@ -426,10 +469,35 @@ export default function AgendaPage() {
         </ul>
       </section>
 
-      <aside className="agenda-panel" ref={panelRef} aria-label="Detalle del día">
-        {form ? <form className="agenda-form" onSubmit={handleSubmit}>
-          <h2>{form.id ? 'Editar cita' : 'Nueva cita'}</h2>
+      <aside className="agenda-panel" aria-label="Próximas citas">
+        <section className="agenda-day-detail">
+          <h2>Próximas citas</h2>
+          {upcoming.length ? <ul className="agenda-upcoming">{upcoming.map((appointment) => <li key={appointment.id}>
+            <button type="button" onClick={() => { setMonth(new Date(new Date(appointment.starts_at).getFullYear(), new Date(appointment.starts_at).getMonth(), 1)); selectDay(dayKey(appointment.starts_at), { detail: true }) }}>
+              <strong>{formatDay(appointment.starts_at)} · {formatTime(appointment.starts_at)}</strong>
+              <span>{appointment.client_name}{appointment.service_title ? ` · ${appointment.service_title}` : ''}</span>
+            </button>
+          </li>)}</ul> : <p className="agenda-empty">No tienes citas próximas. Selecciona un día del calendario para agendar la primera.</p>}
+        </section>
+      </aside>
+    </div>}
 
+    {session && premium && selectedDay && modalOpen && <div className="agenda-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeDay() }}>
+      <div className="agenda-modal" role="dialog" aria-modal="true" aria-label="Detalle del día" ref={panelRef}>
+        <header className="agenda-modal-head">
+          <button type="button" className="agenda-modal-calendar" aria-label="Volver al calendario" title="Volver al calendario" onClick={closeDay}>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="2.5" /><path d="M3 9.5h18M8 2.5v4M16 2.5v4" /></svg>
+          </button>
+          <div>
+            <h2>{formatLongDay(parseDayKey(selectedDay))}</h2>
+            {form && <small>{form.id ? 'Editar cita' : 'Nueva cita'}</small>}
+          </div>
+          <button type="button" className="agenda-modal-close" aria-label="Cerrar" onClick={closeDay}>×</button>
+        </header>
+        <div className="agenda-modal-body">
+          {form ? <>
+          {!form.id && selectedAppointments.length > 0 && <ul className="agenda-list agenda-list--above">{selectedAppointments.map(renderAppointment)}</ul>}
+          <form className="agenda-form" onSubmit={handleSubmit}>
           <label className="agenda-wide">Cliente
             <select
               value={form.clientType === 'platform' ? form.clientId : OTHER_CLIENT}
@@ -447,34 +515,30 @@ export default function AgendaPage() {
 
           {form.clientType === 'external' && <>
             <label className="agenda-wide">Nombre del cliente<input required maxLength={120} value={form.name} onChange={(event) => updateField('name', event.target.value)} placeholder="Ej. María González" /></label>
-            <label>Teléfono (opcional)<input type="tel" maxLength={30} value={form.phone} onChange={(event) => updateField('phone', event.target.value)} placeholder="+56 9 1234 5678" /></label>
-            <label>Correo (opcional)<input type="email" maxLength={120} value={form.email} onChange={(event) => updateField('email', event.target.value)} placeholder="cliente@correo.cl" /></label>
           </>}
 
-          <label>Fecha<input required type="date" min={form.id ? undefined : todayKey} value={form.date} onChange={(event) => updateField('date', event.target.value)} /></label>
-          <label>Hora de inicio<input required type="time" value={form.time} onChange={(event) => updateField('time', event.target.value)} /></label>
-          <label>Duración<select value={form.duration} onChange={(event) => updateField('duration', event.target.value)}>
-            {durationOptions.map((minutes) => <option key={minutes} value={minutes}>{minutes >= 60 && minutes % 60 === 0 ? `${minutes / 60} h` : `${minutes} min`}</option>)}
-          </select></label>
-          <label>Servicio (opcional)<select value={form.serviceId} onChange={(event) => updateField('serviceId', event.target.value)}>
-            <option value="">Sin asociar</option>
-            {services.map((service) => <option key={service.id} value={service.id}>{service.title}</option>)}
-          </select></label>
-          <label>Lugar<select value={form.mode} onChange={(event) => updateField('mode', event.target.value)}>
-            <option value="">Sin definir</option>
-            <option value="local">Local comercial</option>
-            <option value="home">A domicilio</option>
-          </select></label>
           <label className="agenda-wide">Dirección (opcional)<input maxLength={200} value={form.address} onChange={(event) => updateField('address', event.target.value)} placeholder="Dónde se realizará el servicio" /></label>
+
+          <fieldset className="agenda-wide agenda-slots">
+            <legend>Horarios disponibles</legend>
+            <small>Cada opción reserva una hora completa. Marca varias horas seguidas para una cita más larga.</small>
+            {form.legacy && <small className="agenda-slots-legacy">Horario actual: {form.time} ({form.duration} min). Marca horas para cambiarlo.</small>}
+            <div className="agenda-slot-grid">
+              {slotHours.map((hour) => {
+                const state = slotState(hour)
+                const checked = form.slots.includes(hour)
+                return <button type="button" key={hour} role="checkbox" aria-checked={checked} className={`agenda-slot${checked ? ' is-checked' : ''}${state.busy ? ' is-busy' : ''}`} disabled={state.disabled && !checked} title={state.busy ? 'Ya tienes una cita en este horario' : state.past ? 'Esta hora ya pasó' : undefined} onClick={() => toggleSlot(hour)}>{pad(hour)}:00</button>
+              })}
+            </div>
+          </fieldset>
           <label className="agenda-wide">Notas privadas (opcional)<textarea rows={3} maxLength={1000} value={form.notes} onChange={(event) => updateField('notes', event.target.value)} placeholder="Solo tú las ves; no se comparten con el cliente" /></label>
 
           <div className="agenda-actions agenda-wide">
             <button type="submit" disabled={saving}>{saving ? 'Guardando...' : form.id ? 'Guardar cambios' : 'Agendar cita'}</button>
-            <button type="button" disabled={saving} onClick={() => setForm(null)}>Cancelar</button>
+            <button type="button" disabled={saving} onClick={() => (selectedAppointments.length ? setForm(null) : closeDay())}>Cancelar</button>
           </div>
-        </form> : selectedDay ? <section className="agenda-day-detail">
+        </form></> : <section className="agenda-day-detail">
           <header>
-            <h2>{formatLongDay(parseDayKey(selectedDay))}</h2>
             {selectedDay >= todayKey ? <button type="button" className="agenda-new" onClick={openNewForm}>+ Agendar este día</button> : <small className="agenda-empty">Este día ya pasó: no se pueden agendar citas.</small>}
           </header>
 
@@ -490,16 +554,9 @@ export default function AgendaPage() {
           </div>}
 
           {selectedAppointments.length ? <ul className="agenda-list">{selectedAppointments.map(renderAppointment)}</ul> : <p className="agenda-empty">No hay citas este día.</p>}
-        </section> : <section className="agenda-day-detail">
-          <h2>Próximas citas</h2>
-          {upcoming.length ? <ul className="agenda-upcoming">{upcoming.map((appointment) => <li key={appointment.id}>
-            <button type="button" onClick={() => { setMonth(new Date(new Date(appointment.starts_at).getFullYear(), new Date(appointment.starts_at).getMonth(), 1)); selectDay(dayKey(appointment.starts_at)) }}>
-              <strong>{formatDay(appointment.starts_at)} · {formatTime(appointment.starts_at)}</strong>
-              <span>{appointment.client_name}{appointment.service_title ? ` · ${appointment.service_title}` : ''}</span>
-            </button>
-          </li>)}</ul> : <p className="agenda-empty">No tienes citas próximas. Selecciona un día del calendario para agendar la primera.</p>}
         </section>}
-      </aside>
+        </div>
+      </div>
     </div>}
 
     {notice && <div className={`category-admin-toast category-admin-toast--${noticeType}`} role={noticeType === 'error' ? 'alert' : 'status'}>

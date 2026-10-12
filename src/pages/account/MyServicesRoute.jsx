@@ -27,7 +27,7 @@ export default function MyServicesRoute() {
       <section className="account-dashboard-content">
         {authLoading ? <p className="account-dashboard-message">Comprobando sesión...</p> : !isSupabaseConfigured ? <p className="account-dashboard-message" role="status">Configura Supabase para consultar tus servicios.</p> : !session ? <div className="account-dashboard-message">
           <p>Inicia sesión para administrar tus servicios.</p>
-          <Link className="account-profile-link" to="/cuenta" state={{ backgroundLocation: location }}>Iniciar sesión <span>→</span></Link>
+          <Link className="account-profile-link" to="/cuenta" state={{ backgroundLocation: location }}>Iniciar sesión</Link>
         </div> : <MyServicesPage userId={session.user.id} />}
       </section>
     </main>

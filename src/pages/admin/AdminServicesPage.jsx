@@ -135,12 +135,12 @@ export default function AdminServicesPage() {
           <h1>Publicaciones</h1>
           <p>Busca cualquier publicación de la plataforma y oculta las que incumplan las reglas.</p>
         </div>
-        <Link className="admin-services-link" to="/admin/reportes">Ver reportes →</Link>
+        <Link className="admin-services-link" to="/admin/reportes">Ver reportes</Link>
       </header>
 
       {!isSupabaseConfigured && <p className="category-admin-notice">Configura Supabase para ver las publicaciones.</p>}
       {isSupabaseConfigured && authLoading && <p className="category-admin-notice">Comprobando sesión...</p>}
-      {isSupabaseConfigured && !authLoading && !session && <p className="category-admin-notice">Inicia sesión con una cuenta administradora para ver las publicaciones. <Link to="/cuenta" state={{ backgroundLocation: location }}>Iniciar sesión →</Link></p>}
+      {isSupabaseConfigured && !authLoading && !session && <p className="category-admin-notice">Inicia sesión con una cuenta administradora para ver las publicaciones. <Link to="/cuenta" state={{ backgroundLocation: location }}>Iniciar sesión</Link></p>}
       {isSupabaseConfigured && session && adminLoading && <p className="category-admin-notice">Cargando publicaciones...</p>}
       {isSupabaseConfigured && session && isAdmin && !adminLoading && <section className="admin-reports-content">
         <input className="admin-services-search" type="search" aria-label="Buscar publicaciones" placeholder="Buscar por título, profesional, categoría o comuna" value={search} onChange={(event) => setSearch(event.target.value)} />

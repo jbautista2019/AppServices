@@ -250,7 +250,7 @@ export default function HowItWorksPage() {
           </div>
         </div>
         <ul className="how-promo-list">{PROMO_BENEFITS.map((benefit) => <li key={benefit}><span aria-hidden="true">✓</span>{benefit}</li>)}</ul>
-        <p className="how-promo-link"><Link to="/planes">Ver planes y precios <span aria-hidden="true">→</span></Link></p>
+        <p className="how-promo-link"><Link to="/planes">Ver planes y precios</Link></p>
       </article>
 
       <article className="how-panel how-panel--benefits">

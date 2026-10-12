@@ -90,19 +90,19 @@ export default function ReviewPage() {
   else if (!isSupabaseConfigured) content = <p>Configura Supabase para valorar servicios.</p>
   else if (!session) content = <>
     <p>Inicia sesión para valorar este servicio.</p>
-    <Link className="review-link" to="/cuenta" state={{ backgroundLocation: location }}>Iniciar sesión <span aria-hidden="true">→</span></Link>
+    <Link className="review-link" to="/cuenta" state={{ backgroundLocation: location }}>Iniciar sesión</Link>
   </>
   else if (!request) content = <p>Esta solicitud de valoración no existe o no es para tu cuenta.</p>
   else if (!isRecipient) content = <p>Esta solicitud de valoración fue enviada a otra persona.</p>
   else if (done) content = <>
     <h1>¡Gracias por tu valoración!</h1>
     <p>Tu opinión sobre «{request.service_title}» ya es visible para otras personas.</p>
-    {serviceAvailable ? <Link className="review-link" to={`/servicio/${request.service_id}`}>Ver el servicio <span aria-hidden="true">→</span></Link> : <p>Esta publicación ya no está disponible.</p>}
+    {serviceAvailable ? <Link className="review-link" to={`/servicio/${request.service_id}`}>Ver el servicio</Link> : <p>Esta publicación ya no está disponible.</p>}
   </>
   else if (request.completed_at) content = <>
     <h1>Ya valoraste este servicio</h1>
     <p>Gracias por compartir tu experiencia con «{request.service_title}».</p>
-    {serviceAvailable ? <Link className="review-link" to={`/servicio/${request.service_id}`}>Ver el servicio <span aria-hidden="true">→</span></Link> : <p>Esta publicación ya no está disponible.</p>}
+    {serviceAvailable ? <Link className="review-link" to={`/servicio/${request.service_id}`}>Ver el servicio</Link> : <p>Esta publicación ya no está disponible.</p>}
   </>
   else content = <>
     <p className="eyebrow">VALORACIÓN</p>

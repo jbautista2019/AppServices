@@ -175,7 +175,7 @@ export default function AdminPlansPage() {
 
       {!isSupabaseConfigured && <p className="category-admin-notice">Configura Supabase para configurar los planes.</p>}
       {isSupabaseConfigured && authLoading && <p className="category-admin-notice">Comprobando sesión...</p>}
-      {isSupabaseConfigured && !authLoading && !session && <p className="category-admin-notice">Inicia sesión con una cuenta administradora para configurar los planes. <Link to="/cuenta" state={{ backgroundLocation: location }}>Iniciar sesión →</Link></p>}
+      {isSupabaseConfigured && !authLoading && !session && <p className="category-admin-notice">Inicia sesión con una cuenta administradora para configurar los planes. <Link to="/cuenta" state={{ backgroundLocation: location }}>Iniciar sesión</Link></p>}
       {isSupabaseConfigured && session && adminLoading && <p className="category-admin-notice">Cargando planes...</p>}
       {isSupabaseConfigured && session && isAdmin && !adminLoading && <section className="admin-reports-content">
         {form && <form className="admin-plan-form" onSubmit={handleSubmit}>

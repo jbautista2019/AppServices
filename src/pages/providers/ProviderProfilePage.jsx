@@ -56,7 +56,7 @@ export default function ProviderProfilePage() {
         <h1>{name}</h1>
         {rating?.count ? <p className="provider-profile-rating"><Stars value={rating.average} size={16} /> <strong>{rating.average.toFixed(1)}</strong> · {rating.count} {rating.count === 1 ? 'valoración' : 'valoraciones'}</p> : <p className="provider-profile-rating">Aún sin valoraciones</p>}
         {profile?.bio && <p className="provider-profile-bio">{profile.bio}</p>}
-        {whatsapp && <a className="provider-profile-whatsapp" href={whatsapp} target="_blank" rel="noopener noreferrer">Escribir por WhatsApp <span aria-hidden="true">→</span></a>}
+        {whatsapp && <a className="provider-profile-whatsapp" href={whatsapp} target="_blank" rel="noopener noreferrer">Escribir por WhatsApp</a>}
       </div>
     </header>
     <section aria-labelledby="provider-services-title">

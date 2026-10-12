@@ -149,7 +149,7 @@ export default function AdminReportsPage() {
 
       {!isSupabaseConfigured && <p className="category-admin-notice">Configura Supabase para ver los reportes.</p>}
       {isSupabaseConfigured && authLoading && <p className="category-admin-notice">Comprobando sesión...</p>}
-      {isSupabaseConfigured && !authLoading && !session && <p className="category-admin-notice">Inicia sesión con una cuenta administradora para ver los reportes. <Link to="/cuenta" state={{ backgroundLocation: location }}>Iniciar sesión →</Link></p>}
+      {isSupabaseConfigured && !authLoading && !session && <p className="category-admin-notice">Inicia sesión con una cuenta administradora para ver los reportes. <Link to="/cuenta" state={{ backgroundLocation: location }}>Iniciar sesión</Link></p>}
       {isSupabaseConfigured && session && adminLoading && <p className="category-admin-notice">Cargando reportes...</p>}
       {isSupabaseConfigured && session && isAdmin && !adminLoading && <section className="admin-reports-content">
         <div className="admin-reports-filters" role="tablist" aria-label="Filtrar por estado">

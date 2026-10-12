@@ -208,7 +208,7 @@ export default function ProfilePage() {
       <section className="account-dashboard-content">
         {authLoading ? <p className="account-dashboard-message">Comprobando sesión...</p> : !isSupabaseConfigured ? <p className="account-dashboard-message" role="status">Configura Supabase para consultar tu perfil.</p> : !session ? <div className="account-dashboard-message">
           <p>Inicia sesión para ver y editar tu perfil.</p>
-          <Link className="account-profile-link" to="/cuenta" state={{ backgroundLocation: location }}>Iniciar sesión <span>→</span></Link>
+          <Link className="account-profile-link" to="/cuenta" state={{ backgroundLocation: location }}>Iniciar sesión</Link>
         </div> : <div className="profile-card">
           <header className="profile-card-header">
             <div className="account-avatar" aria-hidden="true">{initials}</div>
@@ -269,10 +269,10 @@ export default function ProfilePage() {
             </section>
 
             <footer className="profile-card-footer">
-              {isAdmin && <Link to="/admin/categorias">Administrar categorías <span>→</span></Link>}
-              {isAdmin && <Link to="/admin/publicaciones">Publicaciones <span>→</span></Link>}
-              {isAdmin && <Link to="/admin/promociones">Promociones <span>→</span></Link>}
-              {isAdmin && <Link to="/admin/reportes">Reportes <span>→</span></Link>}
+              {isAdmin && <Link to="/admin/categorias">Administrar categorías</Link>}
+              {isAdmin && <Link to="/admin/publicaciones">Publicaciones</Link>}
+              {isAdmin && <Link to="/admin/promociones">Promociones</Link>}
+              {isAdmin && <Link to="/admin/reportes">Reportes</Link>}
               <button type="button" onClick={handleLogout}>Cerrar sesión</button>
             </footer>
           </section>}

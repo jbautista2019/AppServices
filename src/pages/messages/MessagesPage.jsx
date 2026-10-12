@@ -49,7 +49,7 @@ const MESSAGE_LINK = /(\/valorar\/[0-9a-f-]{36}|\/mis-citas)/i
 function MessageText({ content }) {
   return content.split(MESSAGE_LINK).map((part, index) => {
     if (!MESSAGE_LINK.test(part)) return <Fragment key={index}>{part}</Fragment>
-    return <Link className="message-review-link" key={index} to={part}>{part === '/mis-citas' ? 'Ver mis citas →' : 'Valorar este servicio →'}</Link>
+    return <Link className="message-review-link" key={index} to={part}>{part === '/mis-citas' ? 'Ver mis citas' : 'Valorar este servicio'}</Link>
   })
 }
 
@@ -361,7 +361,7 @@ export default function MessagesPage() {
     {!authLoading && !isSupabaseConfigured && <p className="messages-status">Configura Supabase para usar la mensajería.</p>}
     {!authLoading && isSupabaseConfigured && !session && <div className="messages-status">
       <p>Inicia sesión para consultar tus conversaciones.</p>
-      <Link to="/cuenta" state={{ backgroundLocation: location }}>Iniciar sesión <span aria-hidden="true">→</span></Link>
+      <Link to="/cuenta" state={{ backgroundLocation: location }}>Iniciar sesión</Link>
     </div>}
 
     {!authLoading && isSupabaseConfigured && session && <div className={`messages-layout${selectedConversationId ? ' thread-open' : ''}`}>

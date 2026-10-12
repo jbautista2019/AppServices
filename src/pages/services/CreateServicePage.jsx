@@ -121,7 +121,7 @@ export default function CreateServicePage({ categories }) {
 
   if (!isSupabaseConfigured) return <main className="detail-page"><Link to="/mis-servicios" className="back-link">← Volver a mis servicios</Link><p>Configura Supabase para publicar servicios.</p></main>
 
-  if (!session) return <main className="detail-page"><Link to="/mis-servicios" className="back-link">← Volver a mis servicios</Link><div className="create-service-notice"><p>Inicia sesión para crear una publicación.</p><Link to="/cuenta" state={{ backgroundLocation: location }}>Iniciar sesión <span aria-hidden="true">→</span></Link></div></main>
+  if (!session) return <main className="detail-page"><Link to="/mis-servicios" className="back-link">← Volver a mis servicios</Link><div className="create-service-notice"><p>Inicia sesión para crear una publicación.</p><Link to="/cuenta" state={{ backgroundLocation: location }}>Iniciar sesión</Link></div></main>
 
   return <main className="detail-page create-service-page">
     <Link to="/mis-servicios" className="back-link">← Volver a mis servicios</Link>

@@ -95,7 +95,7 @@ export default function HomePage({ services, categories, loading }) {
             </form>
           </div>
           <section className="home-categories" id="categorias" aria-labelledby="categories-title">
-            <div className="home-section-heading home-category-heading"><h2 id="categories-title">Categorías de servicios</h2><Link to="/buscar">Ver todas <span aria-hidden="true">→</span></Link></div>
+            <div className="home-section-heading home-category-heading"><h2 id="categories-title">Categorías de servicios</h2><Link to="/buscar">Ver todas</Link></div>
             <div className="home-category-grid">
               {categories.map((category, index) => {
                 return <Link to={`/buscar?category=${encodeURIComponent(category.name)}`} className="home-category-card" key={category.name}>
@@ -114,7 +114,7 @@ export default function HomePage({ services, categories, loading }) {
         <div className="home-section-heading">
           <h2 id="professionals-title"><span aria-hidden="true">✦</span> Profesionales más buscados</h2>
           <div className="home-carousel-actions">
-            <Link to="/buscar">Ver todos los profesionales <span aria-hidden="true">→</span></Link>
+            <Link to="/buscar">Ver todos los profesionales</Link>
             <button type="button" aria-label="Desplazar profesionales a la izquierda" onClick={() => scrollProfessionals(-1)}>‹</button>
             <button type="button" aria-label="Desplazar profesionales a la derecha" onClick={() => scrollProfessionals(1)}>›</button>
           </div>
@@ -130,7 +130,7 @@ export default function HomePage({ services, categories, loading }) {
               <span className="home-professional-category">{service.category}</span>
               <span className="home-professional-rating"><b>★</b> {Number(service.rating).toFixed(1)} <span>·</span> {service.location}</span>
               <p>{service.title.replace(/^\[PRUEBA\]\s*/i, '')}</p>
-              <Link className="home-contact-button" to={`/servicio/${service.id}`}>Ver servicio <span aria-hidden="true">→</span></Link>
+              <Link className="home-contact-button" to={`/servicio/${service.id}`}>Ver servicio</Link>
             </div>
           </article>)}
           {!loading && !featuredServices.length && <p className="home-empty-services">Todavía no hay profesionales publicados.</p>}
@@ -141,7 +141,7 @@ export default function HomePage({ services, categories, loading }) {
       {session === null && <section className="home-provider-banner" id="profesionales">
         <div className="home-provider-copy">
           <span className="home-provider-icon" aria-hidden="true">✣</span>
-          <div><h2>¿Eres un profesional?</h2><p>Publica tus servicios y llega a más clientes en tu zona.</p><Link to="/prestadores">Regístrate ahora <span aria-hidden="true">→</span></Link></div>
+          <div><h2>¿Eres un profesional?</h2><p>Publica tus servicios y llega a más clientes en tu zona.</p><Link to="/prestadores">Regístrate ahora</Link></div>
         </div>
         <ul className="home-provider-benefits"><li>Crea tu perfil en minutos</li><li>Recibe solicitudes de clientes</li><li>Destaca con el sello de verificado</li><li>Gestiona tus servicios fácilmente</li></ul>
         <div className="home-provider-image" role="img" aria-label="Vista de Santiago y la cordillera" />

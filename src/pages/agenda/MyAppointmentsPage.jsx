@@ -83,7 +83,7 @@ export default function MyAppointmentsPage() {
 
     {!isSupabaseConfigured && <p className="category-admin-notice">Configura Supabase para ver tus citas.</p>}
     {isSupabaseConfigured && authLoading && <p className="category-admin-notice">Comprobando sesión...</p>}
-    {isSupabaseConfigured && !authLoading && !session && <p className="category-admin-notice">Inicia sesión para ver tus citas. <Link to="/cuenta" state={{ backgroundLocation: location }}>Iniciar sesión →</Link></p>}
+    {isSupabaseConfigured && !authLoading && !session && <p className="category-admin-notice">Inicia sesión para ver tus citas. <Link to="/cuenta" state={{ backgroundLocation: location }}>Iniciar sesión</Link></p>}
     {session && appointments === null && <p className="category-admin-notice">Cargando tus citas...</p>}
     {error && <p className="category-admin-notice" role="alert">{error}</p>}
     {session && appointments && !error && <>
