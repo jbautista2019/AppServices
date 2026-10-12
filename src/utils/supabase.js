@@ -65,8 +65,53 @@ export async function getPremiumPlans() {
   const { data, error } = await supabase
     .from('premium_plans')
     .select('id, name, description, days, price_clp, features, highlighted')
+    .eq('is_active', true)
     .order('sort_order', { ascending: true })
   return { data: data || [], error: friendlyPremiumError(error) }
+}
+
+// Administración de planes (solo para administradores): ven también los inactivos.
+export async function listAllPlans() {
+  if (!supabase) return { data: [], error: new Error('Supabase no está configurado.') }
+
+  const { data, error } = await supabase
+    .from('premium_plans')
+    .select('id, name, description, days, price_clp, features, highlighted, is_active, sort_order')
+    .order('sort_order', { ascending: true })
+  return { data: data || [], error: friendlyPlanAdminError(error) }
+}
+
+// Crea (id nulo) o actualiza un plan; devuelve el id.
+export async function savePlan(plan) {
+  if (!supabase) return { data: null, error: new Error('Supabase no está configurado.') }
+
+  const { data, error } = await supabase.rpc('admin_save_plan', {
+    p_id: plan.id || null,
+    p_name: plan.name,
+    p_description: plan.description || null,
+    p_days: plan.days,
+    p_price_clp: plan.price_clp,
+    p_features: plan.features || [],
+    p_highlighted: Boolean(plan.highlighted),
+    p_is_active: plan.is_active !== false,
+    p_sort_order: plan.sort_order ?? 0,
+  })
+  return { data, error: friendlyPlanAdminError(error) }
+}
+
+export async function deletePlan(planId) {
+  if (!supabase) return { error: new Error('Supabase no está configurado.') }
+
+  const { error } = await supabase.rpc('admin_delete_plan', { p_id: planId })
+  return { error: friendlyPlanAdminError(error) }
+}
+
+function friendlyPlanAdminError(error) {
+  if (!error) return null
+  if (error.code === 'PGRST202' || /schema cache/i.test(error.message || '')) {
+    return new Error('Falta habilitar la gestión de planes en Supabase. Ejecuta supabase/admin-plans.sql.')
+  }
+  return friendlyPremiumError(error)
 }
 
 export async function requestPromotion(serviceId, planId) {

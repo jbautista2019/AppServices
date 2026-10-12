@@ -65,7 +65,7 @@ Para ampliar el vocabulario agrega filas a `public.search_synonyms` (`term` es l
 La página `/planes` ofrece planes para destacar una publicación en la portada («Profesionales más buscados»), donde las publicaciones premium salen primero y con la insignia ★ Premium. Los lugares premium rotan cada día y ocupan como máximo el 75% de la portada.
 
 - **No hay pasarela de pago todavía.** El profesional solicita un plan para una de sus publicaciones activas; un administrador lo revisa, coordina el pago por fuera de la plataforma y lo activa en `/admin/promociones`. Al activar se fija `services.premium_until`; al vencer no hace falta ningún proceso. Para cobrar dentro de la app habría que integrar un medio de pago (Flow, Mercado Pago, Stripe, etc.).
-- **Los precios son de ejemplo.** Se cambian editando la tabla `premium_plans` en Supabase (nombre, días, precio, características); también se pueden agregar o desactivar planes (`is_active`).
+- **Los planes se administran desde el panel.** Los administradores abren **Configurar planes** (`/admin/planes`, en el menú de la cuenta) para crear, editar, activar/desactivar y eliminar planes: nombre, descripción, duración, precio, características, orden y si es el plan destacado. Todo se guarda en la tabla `premium_plans`; los valores iniciales de `premium-plans.sql` son de ejemplo. Un plan que ya tiene solicitudes no se puede eliminar, solo desactivar (las solicitudes guardan una copia del precio y la duración, así que editar un plan no altera las ya hechas). Requiere `supabase/admin-plans.sql`.
 - El profesional no puede ponerse premium solo: `premium_until` está protegido por el mismo trigger que la moderación y solo lo cambian las funciones de administrador.
 
 ### Orden de los scripts SQL
@@ -80,7 +80,8 @@ Todos son idempotentes y se ejecutan en **SQL Editor**. El orden importa porque 
 6. `supabase/user-notifications.sql` (notificaciones de la plataforma)
 7. `supabase/service-reports.sql` (reportes y moderación; usa `user_notifications` y `category_admins`)
 8. `supabase/premium-plans.sql` (planes premium y promociones; usa `user_notifications`, `category_admins` y el trigger de `service-reports.sql`)
-9. `supabase/semantic-search.sql` (búsqueda híbrida, opcional)
+9. `supabase/admin-plans.sql` (gestión de planes desde `/admin/planes`; usa `premium_plans` y `service_promotions`)
+10. `supabase/semantic-search.sql` (búsqueda híbrida, opcional)
 
 ### Lista de prueba del flujo completo
 

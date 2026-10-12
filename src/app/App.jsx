@@ -10,6 +10,7 @@ import MyServicesRoute from '../pages/account/MyServicesRoute'
 import ProfilePage from '../pages/account/ProfilePage'
 import RegistrationModal from '../pages/account/RegistrationModal'
 import AdminReportsPage from '../pages/admin/AdminReportsPage'
+import AdminPlansPage from '../pages/admin/AdminPlansPage'
 import AdminPromotionsPage from '../pages/admin/AdminPromotionsPage'
 import AdminServicesPage from '../pages/admin/AdminServicesPage'
 import CategoriesAdminPage from '../pages/admin/CategoriesAdminPage'
@@ -79,6 +80,7 @@ export default function App() {
       <Route path="/admin/categorias" element={<CategoriesAdminPage />} />
       <Route path="/admin/reportes" element={<AdminReportsPage />} />
       <Route path="/admin/publicaciones" element={<AdminServicesPage />} />
+      <Route path="/admin/planes" element={<AdminPlansPage />} />
       <Route path="/admin/promociones" element={<AdminPromotionsPage />} />
       <Route path="/planes" element={<PlansPage />} />
       <Route path="/como-funciona" element={<HowItWorksPage />} />

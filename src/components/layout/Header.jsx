@@ -299,6 +299,7 @@ export default function Header({ services = [], categories = [] }) {
                 <Link to="/admin/categorias" onClick={() => setProfileMenuOpen(false)}>Administrar categorías</Link>
                 <Link to="/admin/publicaciones" onClick={() => setProfileMenuOpen(false)}>Administrar publicaciones</Link>
                 <Link to="/admin/promociones" onClick={() => setProfileMenuOpen(false)}>Promociones premium</Link>
+                <Link to="/admin/planes" onClick={() => setProfileMenuOpen(false)}>Configurar planes</Link>
                 <Link to="/admin/reportes" onClick={() => setProfileMenuOpen(false)}>Reportes de publicaciones</Link>
               </> : categoryAdminChecked && <>
                 <Link to="/mis-servicios" onClick={() => setProfileMenuOpen(false)}>Mis servicios</Link>
