@@ -14,6 +14,7 @@ export default function Header({ services = [], categories = [] }) {
   const [session, setSession] = useState(null)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [messagesOpen, setMessagesOpen] = useState(false)
   const [favoritesOpen, setFavoritesOpen] = useState(false)
   const { items: favoriteEntries, toggle: toggleFavorite } = useFavorites()
   // Si una publicación ya no es visible (pausada u oculta) no se lista, aunque siga guardada.
@@ -21,11 +22,13 @@ export default function Header({ services = [], categories = [] }) {
   const [notifications, setNotifications] = useState([])
   const [reportNotifications, setReportNotifications] = useState([])
   const [platformNotifications, setPlatformNotifications] = useState([])
-  const totalNotifications = notifications.length + reportNotifications.length + platformNotifications.length
+  const totalNotifications = reportNotifications.length + platformNotifications.length
+  const unreadMessages = notifications.length
   const [canManageCategories, setCanManageCategories] = useState(false)
   const [categoryAdminChecked, setCategoryAdminChecked] = useState(false)
   const profileMenuRef = useRef(null)
   const notificationsRef = useRef(null)
+  const messagesRef = useRef(null)
   const favoritesRef = useRef(null)
 
   useEffect(() => {
@@ -181,16 +184,18 @@ export default function Header({ services = [], categories = [] }) {
   useEffect(() => {
     setProfileMenuOpen(false)
     setNotificationsOpen(false)
+    setMessagesOpen(false)
     setFavoritesOpen(false)
   }, [location.pathname, location.search])
 
   useEffect(() => {
-    if (!profileMenuOpen && !notificationsOpen && !favoritesOpen) return
+    if (!profileMenuOpen && !notificationsOpen && !favoritesOpen && !messagesOpen) return
 
     function handlePointerDown(event) {
       if (!profileMenuRef.current?.contains(event.target)) setProfileMenuOpen(false)
       if (!notificationsRef.current?.contains(event.target)) setNotificationsOpen(false)
       if (!favoritesRef.current?.contains(event.target)) setFavoritesOpen(false)
+      if (!messagesRef.current?.contains(event.target)) setMessagesOpen(false)
     }
 
     function handleKeyDown(event) {
@@ -198,6 +203,7 @@ export default function Header({ services = [], categories = [] }) {
         setProfileMenuOpen(false)
         setNotificationsOpen(false)
         setFavoritesOpen(false)
+        setMessagesOpen(false)
       }
     }
 
@@ -207,7 +213,7 @@ export default function Header({ services = [], categories = [] }) {
       document.removeEventListener('pointerdown', handlePointerDown)
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [notificationsOpen, profileMenuOpen, favoritesOpen])
+  }, [notificationsOpen, profileMenuOpen, favoritesOpen, messagesOpen])
 
   const displayName = session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split('@')[0] || 'Mi cuenta'
   const initials = displayName.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase()
@@ -234,7 +240,7 @@ export default function Header({ services = [], categories = [] }) {
       </nav>
       <div className="header-actions">
         {session && <div className="header-notifications-wrap header-favorites-wrap" ref={favoritesRef}>
-          <button className="header-notifications-button" type="button" aria-label={favorites.length ? `Favoritos, ${favorites.length} guardados` : 'Favoritos'} aria-haspopup="true" aria-expanded={favoritesOpen} aria-controls="header-favorites-menu" onClick={() => { setFavoritesOpen((open) => !open); setNotificationsOpen(false); setProfileMenuOpen(false) }}>
+          <button className="header-notifications-button" type="button" aria-label={favorites.length ? `Favoritos, ${favorites.length} guardados` : 'Favoritos'} aria-haspopup="true" aria-expanded={favoritesOpen} aria-controls="header-favorites-menu" onClick={() => { setFavoritesOpen((open) => !open); setNotificationsOpen(false); setMessagesOpen(false); setProfileMenuOpen(false) }}>
             <svg aria-hidden="true" viewBox="0 0 24 24" fill={favoritesOpen ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
             {favorites.length > 0 && <span className="header-notifications-badge header-favorites-badge">{favorites.length > 99 ? '99+' : favorites.length}</span>}
           </button>
@@ -252,12 +258,32 @@ export default function Header({ services = [], categories = [] }) {
             })}</div> : <p className="header-notifications-empty">Aún no tienes favoritos. Toca el ♡ de un servicio para guardarlo.</p>}
           </section>}
         </div>}
+        {session && <div className="header-notifications-wrap" ref={messagesRef}>
+          <button className="header-notifications-button" type="button" aria-label={unreadMessages ? `Mensajes, ${unreadMessages} sin leer` : 'Mensajes'} aria-haspopup="true" aria-expanded={messagesOpen} aria-controls="header-messages-menu" onClick={() => { setMessagesOpen((open) => !open); setNotificationsOpen(false); setProfileMenuOpen(false); setFavoritesOpen(false) }}>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.8 8.8 0 0 1-3.6-.8L3 21l1.9-5.1A8.4 8.4 0 0 1 3 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5z" /></svg>
+            {unreadMessages > 0 && <span className="header-notifications-badge">{unreadMessages > 99 ? '99+' : unreadMessages}</span>}
+          </button>
+          {messagesOpen && <section className="header-notifications-menu" id="header-messages-menu" aria-label="Mensajes">
+            <div className="header-notifications-heading"><strong>Mensajes</strong><span>{unreadMessages} sin leer</span></div>
+            {notifications.length ?<div className="header-notifications-list">{notifications.map((notification) => {
+              const conversation = notification.conversations
+              const senderName = String(conversation.client_id) === String(session.user.id)
+                ? conversation.provider_name || 'Profesional'
+                : conversation.client_name || 'Cliente'
+              return <Link className="header-notification-item" key={notification.id} to={`/mensajes?conversation=${encodeURIComponent(notification.conversation_id)}`} onClick={() => setMessagesOpen(false)}>
+                <span className="header-notification-dot" aria-hidden="true" />
+                <span><strong>{senderName}</strong><small>{conversation.service_title}</small><span>{notification.content}</span></span>
+              </Link>
+            })}</div> : <p className="header-notifications-empty">No tienes mensajes nuevos.</p>}
+            <Link className="header-notifications-all" to="/mensajes" onClick={() => setMessagesOpen(false)}>Ver mensajes</Link>
+          </section>}
+        </div>}
         {session && <div className="header-notifications-wrap" ref={notificationsRef}>
-          <button className="header-notifications-button" type="button" aria-label={totalNotifications ? `Notificaciones, ${totalNotifications} sin leer` : 'Notificaciones'} aria-haspopup="true" aria-expanded={notificationsOpen} aria-controls="header-notifications-menu" onClick={() => { setNotificationsOpen((open) => !open); setProfileMenuOpen(false); setFavoritesOpen(false) }}>
+          <button className="header-notifications-button" type="button" aria-label={totalNotifications ? `Notificaciones, ${totalNotifications} sin leer` : 'Notificaciones'} aria-haspopup="true" aria-expanded={notificationsOpen} aria-controls="header-notifications-menu" onClick={() => { setNotificationsOpen((open) => !open); setMessagesOpen(false); setProfileMenuOpen(false); setFavoritesOpen(false) }}>
             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" /><path d="M10 21h4" /></svg>
             {totalNotifications > 0 && <span className="header-notifications-badge">{totalNotifications > 99 ? '99+' : totalNotifications}</span>}
           </button>
-          {notificationsOpen && <section className="header-notifications-menu" id="header-notifications-menu" aria-label="Notificaciones de mensajes">
+          {notificationsOpen && <section className="header-notifications-menu" id="header-notifications-menu" aria-label="Notificaciones">
             <div className="header-notifications-heading"><strong>Notificaciones</strong><span>{totalNotifications} sin leer</span></div>
             {platformNotifications.length > 0 && <div className="header-notifications-list">{platformNotifications.map((notification) => <Link className="header-notification-item" key={notification.id} to={notification.link || `${location.pathname}${location.search}`} onClick={() => openPlatformNotification(notification)}>
               <span className="header-notification-dot header-notification-dot--alert" aria-hidden="true" />
@@ -269,17 +295,7 @@ export default function Header({ services = [], categories = [] }) {
                 <span><strong>{reportNotifications.length === 1 ? '1 publicación reportada' : `${reportNotifications.length} publicaciones reportadas`}</strong>{reportNotifications.slice(0, 3).map((report) => <small key={report.id}>{report.services?.title || 'Publicación'} · {REPORT_REASONS.find((item) => item.value === report.reason)?.label || report.reason}</small>)}<span>Pendientes de revisión</span></span>
               </Link>
             </div>}
-            {notifications.length ?<div className="header-notifications-list">{notifications.map((notification) => {
-              const conversation = notification.conversations
-              const senderName = String(conversation.client_id) === String(session.user.id)
-                ? conversation.provider_name || 'Profesional'
-                : conversation.client_name || 'Cliente'
-              return <Link className="header-notification-item" key={notification.id} to={`/mensajes?conversation=${encodeURIComponent(notification.conversation_id)}`} onClick={() => setNotificationsOpen(false)}>
-                <span className="header-notification-dot" aria-hidden="true" />
-                <span><strong>{senderName}</strong><small>{conversation.service_title}</small><span>{notification.content}</span></span>
-              </Link>
-            })}</div> : !reportNotifications.length && !platformNotifications.length && <p className="header-notifications-empty">No tienes mensajes nuevos.</p>}
-            <Link className="header-notifications-all" to="/mensajes" onClick={() => setNotificationsOpen(false)}>Ver mensajes</Link>
+            {!reportNotifications.length && !platformNotifications.length && <p className="header-notifications-empty">No tienes notificaciones nuevas.</p>}
           </section>}
         </div>}
         {session ? <div className="header-profile-wrap" ref={profileMenuRef} onMouseEnter={() => setProfileMenuOpen(true)} onMouseLeave={() => setProfileMenuOpen(false)}>

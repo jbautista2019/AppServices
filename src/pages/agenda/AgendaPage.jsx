@@ -21,6 +21,8 @@ const formatDay = (value) => capitalize(new Intl.DateTimeFormat('es-CL', { weekd
 const formatLongDay = (value) => capitalize(new Intl.DateTimeFormat('es-CL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(value)))
 const formatMonth = (date) => capitalize(new Intl.DateTimeFormat('es-CL', { month: 'long', year: 'numeric' }).format(date))
 const formatTime = (value) => new Date(value).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
+const daysUntil = (value, todayKey) => Math.round((parseDayKey(dayKey(value)) - parseDayKey(todayKey)) / 86400000)
+const countdownLabel = (days) => (days <= 0 ? 'Hoy' : days === 1 ? 'Mañana' : `Faltan ${days} días`)
 const isUpcoming = (appointment) => appointment.status === 'scheduled' && Date.parse(appointment.ends_at) >= Date.now()
 
 // Celdas del mes (empieza en lunes) con los días de relleno de los meses vecinos.
@@ -476,6 +478,7 @@ export default function AgendaPage() {
             <button type="button" onClick={() => { setMonth(new Date(new Date(appointment.starts_at).getFullYear(), new Date(appointment.starts_at).getMonth(), 1)); selectDay(dayKey(appointment.starts_at), { detail: true }) }}>
               <strong>{formatDay(appointment.starts_at)} · {formatTime(appointment.starts_at)}</strong>
               <span>{appointment.client_name}{appointment.service_title ? ` · ${appointment.service_title}` : ''}</span>
+              <em className={`agenda-countdown${daysUntil(appointment.starts_at, todayKey) <= 0 ? ' is-today' : ''}`}>{countdownLabel(daysUntil(appointment.starts_at, todayKey))}</em>
             </button>
           </li>)}</ul> : <p className="agenda-empty">No tienes citas próximas. Selecciona un día del calendario para agendar la primera.</p>}
         </section>
