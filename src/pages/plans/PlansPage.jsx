@@ -23,12 +23,13 @@ const FAQ = [
   ['¿Cuántas publicaciones puedo promocionar?', 'Cada plan se aplica a una publicación. Si quieres destacar varias, solicita un plan para cada una.'],
 ]
 
-const STATUS_LABELS = { pending: 'Pendiente de activación', active: 'Activo', rejected: 'Rechazada', cancelled: 'Finalizada' }
+const STATUS_LABELS = { pending: 'Pendiente de activación', active: 'Activo', rejected: 'Rechazada', cancelled: 'Finalizada', expired: 'Vencida' }
 
 const formatPrice = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(amount)
 const formatDate = (value) => new Date(value).toLocaleDateString('es-CL')
 
 function promotionLabel(promotion) {
+  if (promotion.status === 'expired') return promotion.ends_at ? `Venció el ${formatDate(promotion.ends_at)}` : 'Vencida'
   if (promotion.status === 'active') {
     return promotion.ends_at && Date.parse(promotion.ends_at) <= Date.now() ? 'Vencida' : `Activa hasta el ${formatDate(promotion.ends_at)}`
   }

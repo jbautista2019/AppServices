@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { isCategoryAdmin, isSupabaseConfigured, listPromotions, REPORTS_CHANGED_EVENT, setPromotionStatus, supabase } from '../../utils/supabase'
+import { isCategoryAdmin, isSupabaseConfigured, listPromotions, REPORTS_CHANGED_EVENT, runPromotionExpiry, setPromotionStatus, supabase } from '../../utils/supabase'
 
-const STATUS_LABELS = { pending: 'Pendiente', active: 'Activa', rejected: 'Rechazada', cancelled: 'Finalizada' }
+const STATUS_LABELS = { pending: 'Pendiente', active: 'Activa', rejected: 'Rechazada', cancelled: 'Finalizada', expired: 'Vencida' }
 const FILTERS = [
   { id: 'pending', label: 'Pendientes' },
   { id: 'active', label: 'Activas' },
@@ -11,7 +11,7 @@ const FILTERS = [
 ]
 const formatPrice = (amount) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(amount)
 const formatDate = (value) => new Date(value).toLocaleDateString('es-CL')
-const matchesFilter = (promotion, filter) => filter === 'all' || (filter === 'history' ? ['rejected', 'cancelled'].includes(promotion.status) : promotion.status === filter)
+const matchesFilter = (promotion, filter) => filter === 'all' || (filter === 'history' ? ['rejected', 'cancelled', 'expired'].includes(promotion.status) : promotion.status === filter)
 
 export default function AdminPromotionsPage() {
   const location = useLocation()
@@ -72,6 +72,7 @@ export default function AdminPromotionsPage() {
         return
       }
       setIsAdmin(true)
+      await runPromotionExpiry()
       await load()
       if (!cancelled) setAdminLoading(false)
     }
@@ -134,6 +135,7 @@ export default function AdminPromotionsPage() {
             <small className="admin-report-reporter">
               {promotion.user_email} · solicitado el {formatDate(promotion.requested_at)}
               {promotion.status === 'active' && promotion.ends_at ? ` · activa hasta el ${formatDate(promotion.ends_at)}` : ''}
+              {promotion.status === 'expired' && promotion.ends_at ? ` · venció el ${formatDate(promotion.ends_at)}` : ''}
             </small>
           </div>
           <div className="admin-users-actions admin-report-actions">

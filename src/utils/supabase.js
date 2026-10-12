@@ -138,6 +138,17 @@ export async function listPromotions() {
   return { data: data || [], error: friendlyPremiumError(error) }
 }
 
+// Cierra las promociones vencidas y avisa a sus dueños. pg_cron lo hace cada hora; esto cubre el caso de que no esté habilitado.
+// Si el script promotion-expiry.sql aún no se ejecutó, simplemente no hace nada.
+export async function runPromotionExpiry() {
+  if (!supabase) return
+  try {
+    await supabase.rpc('admin_process_promotion_expiry')
+  } catch {
+    // El cierre de vencidos es opcional: si falla, el panel igual lista las promociones.
+  }
+}
+
 export async function setPromotionStatus(promotionId, status) {
   if (!supabase) return { error: new Error('Supabase no está configurado.') }
 

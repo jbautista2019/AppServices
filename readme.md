@@ -66,6 +66,7 @@ La página `/planes` ofrece planes para destacar una publicación en la portada 
 
 - **No hay pasarela de pago todavía.** El profesional solicita un plan para una de sus publicaciones activas; un administrador lo revisa, coordina el pago por fuera de la plataforma y lo activa en `/admin/promociones`. Al activar se fija `services.premium_until`; al vencer no hace falta ningún proceso. Para cobrar dentro de la app habría que integrar un medio de pago (Flow, Mercado Pago, Stripe, etc.).
 - **Los planes se administran desde el panel.** Los administradores abren **Configurar planes** (`/admin/planes`, en el menú de la cuenta) para crear, editar, activar/desactivar y eliminar planes: nombre, descripción, duración, precio, características, orden y si es el plan destacado. Todo se guarda en la tabla `premium_plans`; los valores iniciales de `premium-plans.sql` son de ejemplo. Un plan que ya tiene solicitudes no se puede eliminar, solo desactivar (las solicitudes guardan una copia del precio y la duración, así que editar un plan no altera las ya hechas). Requiere `supabase/admin-plans.sql`.
+- **Los planes vencen solos.** La publicación deja de ser premium al llegar su fecha de término, sin ningún proceso. Además, `supabase/promotion-expiry.sql` programa con `pg_cron` una tarea cada hora que marca como *Vencida* la promoción, avisa al profesional en su campana y le manda un recordatorio 3 días antes del término (una sola vez). Si `pg_cron` no se puede activar desde el script, habilítalo en **Database > Extensions** y vuelve a ejecutarlo; mientras tanto el panel `/admin/promociones` cierra los vencidos cada vez que se abre.
 - El profesional no puede ponerse premium solo: `premium_until` está protegido por el mismo trigger que la moderación y solo lo cambian las funciones de administrador.
 
 ### Orden de los scripts SQL
@@ -81,7 +82,8 @@ Todos son idempotentes y se ejecutan en **SQL Editor**. El orden importa porque 
 7. `supabase/service-reports.sql` (reportes y moderación; usa `user_notifications` y `category_admins`)
 8. `supabase/premium-plans.sql` (planes premium y promociones; usa `user_notifications`, `category_admins` y el trigger de `service-reports.sql`)
 9. `supabase/admin-plans.sql` (gestión de planes desde `/admin/planes`; usa `premium_plans` y `service_promotions`)
-10. `supabase/semantic-search.sql` (búsqueda híbrida, opcional)
+10. `supabase/promotion-expiry.sql` (vencimiento automático de planes y avisos; usa `service_promotions` y `user_notifications`; activa `pg_cron`)
+11. `supabase/semantic-search.sql` (búsqueda híbrida, opcional)
 
 ### Lista de prueba del flujo completo
 

@@ -220,6 +220,7 @@
 .plan-status--active { background: #def5e5; color: #1d6b3a; }
 .plan-status--rejected { background: #fde3e0; color: #b3261e; }
 .plan-status--cancelled { background: #e8ebf0; color: #5b6b82; }
+.plan-status--expired { background: #e8ebf0; color: #5b6b82; }
 
 .plans-steps ol {
   display: grid;
