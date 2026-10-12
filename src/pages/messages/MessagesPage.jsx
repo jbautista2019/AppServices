@@ -44,12 +44,13 @@ function formatInboxTime(timestamp) {
 }
 
 // Convierte los enlaces internos de valoración (/valorar/<id>) en enlaces navegables.
-const REVIEW_LINK = /(\/valorar\/[0-9a-f-]{36})/i
+const MESSAGE_LINK = /(\/valorar\/[0-9a-f-]{36}|\/mis-citas)/i
 
 function MessageText({ content }) {
-  return content.split(REVIEW_LINK).map((part, index) => REVIEW_LINK.test(part)
-    ? <Link className="message-review-link" key={index} to={part}>Valorar este servicio →</Link>
-    : <Fragment key={index}>{part}</Fragment>)
+  return content.split(MESSAGE_LINK).map((part, index) => {
+    if (!MESSAGE_LINK.test(part)) return <Fragment key={index}>{part}</Fragment>
+    return <Link className="message-review-link" key={index} to={part}>{part === '/mis-citas' ? 'Ver mis citas →' : 'Valorar este servicio →'}</Link>
+  })
 }
 
 function upsertMessage(list, message) {

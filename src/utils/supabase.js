@@ -689,3 +689,101 @@ export function refreshServiceEmbedding(serviceId) {
   if (!serviceId) return Promise.resolve()
   return callEdgeFunction('semantic-search', { action: 'embed', serviceId }).catch(() => {})
 }
+
+// ---------------------------------------------------------------------------
+// Agenda de citas (solo usuarios premium; las reglas se validan en la base de datos)
+// ---------------------------------------------------------------------------
+
+function friendlyAppointmentError(error) {
+  if (!error) return null
+  if (error.code === 'PGRST202' || error.code === 'PGRST205' || error.code === '42P01' || /schema cache/i.test(error.message || '')) {
+    return new Error('Falta habilitar la agenda de citas en Supabase. Ejecuta supabase/appointments.sql.')
+  }
+  return new Error(error.message || 'No se pudo completar la operación. Inténtalo nuevamente.')
+}
+
+// ¿La persona tiene un plan premium vigente? (la agenda solo está disponible para ellas)
+export async function getPremiumAccess() {
+  if (!supabase) return { data: false, error: new Error('Supabase no está configurado.') }
+
+  const { data, error } = await supabase.rpc('is_premium_user')
+  return { data: data === true, error: friendlyAppointmentError(error) }
+}
+
+export async function listProviderAppointments(userId) {
+  if (!supabase || !userId) return { data: [], error: null }
+
+  const { data, error } = await supabase
+    .from('appointments')
+    .select('id, service_id, service_title, client_id, client_name, client_phone, client_email, starts_at, ends_at, mode, address, notes, status, shared_at')
+    .eq('provider_id', userId)
+    .order('starts_at', { ascending: true })
+  return { data: data || [], error: friendlyAppointmentError(error) }
+}
+
+// Citas que otros profesionales agendaron para la persona que llama (solo columnas seguras).
+export async function listMyClientAppointments() {
+  if (!supabase) return { data: [], error: new Error('Supabase no está configurado.') }
+
+  const { data, error } = await supabase.rpc('list_my_client_appointments')
+  return { data: data || [], error: friendlyAppointmentError(error) }
+}
+
+// Personas de la plataforma que le han escrito por el chat al profesional (sin repetir). Incluye la conversación más reciente
+// con cada una (conversation_id) para poder compartirle una cita por el chat.
+export async function getMyChatClients(userId) {
+  if (!supabase || !userId) return { data: [], error: null }
+
+  const { data, error } = await supabase
+    .from('conversations')
+    .select('id, client_id, client_name, created_at')
+    .eq('provider_id', userId)
+    .order('created_at', { ascending: true })
+  if (error) return { data: [], error }
+
+  const byId = new Map()
+  for (const conversation of data || []) byId.set(conversation.client_id, { client_id: conversation.client_id, client_name: conversation.client_name, conversation_id: conversation.id })
+  return { data: [...byId.values()].sort((first, second) => first.client_name.localeCompare(second.client_name, 'es')), error: null }
+}
+
+// Crea (id nulo) o actualiza una cita; devuelve su id.
+export async function saveAppointment(appointment) {
+  if (!supabase) return { data: null, error: new Error('Supabase no está configurado.') }
+
+  const { data, error } = await supabase.rpc('save_appointment', {
+    p_id: appointment.id || null,
+    p_service_id: appointment.service_id || null,
+    p_client_id: appointment.client_id || null,
+    p_client_name: appointment.client_name || null,
+    p_client_phone: appointment.client_phone || null,
+    p_client_email: appointment.client_email || null,
+    p_starts_at: appointment.starts_at,
+    p_ends_at: appointment.ends_at,
+    p_mode: appointment.mode || null,
+    p_address: appointment.address || null,
+    p_notes: appointment.notes || null,
+  })
+  return { data, error: friendlyAppointmentError(error) }
+}
+
+export async function setAppointmentStatus(appointmentId, status) {
+  if (!supabase) return { error: new Error('Supabase no está configurado.') }
+
+  const { error } = await supabase.rpc('set_appointment_status', { p_id: appointmentId, p_status: status })
+  return { error: friendlyAppointmentError(error) }
+}
+
+// Registra que la cita ya se compartió en el chat (el mensaje se envía con sendConversationMessage).
+export async function markAppointmentShared(appointmentId) {
+  if (!supabase) return { error: new Error('Supabase no está configurado.') }
+
+  const { error } = await supabase.rpc('mark_appointment_shared', { p_id: appointmentId })
+  return { error: friendlyAppointmentError(error) }
+}
+
+export async function deleteAppointment(appointmentId) {
+  if (!supabase) return { error: new Error('Supabase no está configurado.') }
+
+  const { error } = await supabase.rpc('delete_appointment', { p_id: appointmentId })
+  return { error: friendlyAppointmentError(error) }
+}

@@ -10,6 +10,8 @@ import MyServicesRoute from '../pages/account/MyServicesRoute'
 import ProfilePage from '../pages/account/ProfilePage'
 import RegistrationModal from '../pages/account/RegistrationModal'
 import AdminReportsPage from '../pages/admin/AdminReportsPage'
+import AgendaPage from '../pages/agenda/AgendaPage'
+import MyAppointmentsPage from '../pages/agenda/MyAppointmentsPage'
 import AdminPlansPage from '../pages/admin/AdminPlansPage'
 import AdminPromotionsPage from '../pages/admin/AdminPromotionsPage'
 import AdminServicesPage from '../pages/admin/AdminServicesPage'
@@ -75,6 +77,8 @@ export default function App() {
       <Route path="/prestadores" element={<ProvidersPage />} />
       <Route path="/profesional/:id" element={<ProviderProfilePage />} />
       <Route path="/perfil" element={<ProfilePage />} />
+      <Route path="/agenda" element={<AgendaPage />} />
+      <Route path="/mis-citas" element={<MyAppointmentsPage />} />
       <Route path="/mis-servicios" element={<MyServicesRoute />} />
       <Route path="/mensajes" element={<MessagesPage />} />
       <Route path="/admin/categorias" element={<CategoriesAdminPage />} />

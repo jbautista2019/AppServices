@@ -106,6 +106,7 @@ const OFFER = [
 const PROMO_BENEFITS = [
   'Mayor visibilidad: apareces primero en la portada',
   'Insignia Premium en las tarjetas y en el detalle',
+  'Agenda de citas para tus clientes, de la plataforma y externos',
   'Llega a más clientes potenciales',
 ]
 
